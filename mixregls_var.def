@@ -1,0 +1,15 @@
+Roy Data - Happy10 - 11 quad points                               
+location scale model                                                   
+RoyHappy.dat                                                                     
+RoyHappy.out                                                                     
+RoyHappy.def                                                                     
+  13  4 0  4  0  0  0 0 0 0 0.1E-004  11 1  200 0 0 2 0.3 1
+  1  2
+10 11 12 13
+10 11 12 13
+ Happy10       
+assess assess2 AllNoGoFARate_t10b  AllGoMissRate_t10b
+assess assess2 AllNoGoFARate_t10b  AllGoMissRate_t10b
+
+ 
+       
