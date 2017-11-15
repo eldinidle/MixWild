@@ -3203,4 +3203,4 @@ END MODULE RRM_MODULE
 ! compiled as as module.  So the INCLUDE directive is used to 
 ! avoid duplication - a single file is used in all modules.
 ! ************************************************
-INCLUDE "C:\Users\Rachel\Dropbox\Hedeker\Mixor\DLLSTUB.F90"
+INCLUDE "DLLSTUB.F90"
