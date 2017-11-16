@@ -596,7 +596,7 @@ PROGRAM MIXREGLS_subject
             write(mystr, '(I5)') nreps
         CALL SYSTEM("cat "//trim(fileprefix)//"_desc2.out "//trim(fileprefix) &
                     //"_random_"//trim(adjustl(mystr))//".out >> "//trim(fileprefix)//"_2.out")
-        call system("del "//trim(fileprefix)//"_desc2.out")
+        call system("rm "//trim(fileprefix)//"_desc2.out")
     end if
 CONTAINS
 
