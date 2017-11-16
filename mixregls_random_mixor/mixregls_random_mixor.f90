@@ -1185,7 +1185,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
              write(IUN,'(" Number of level-1 observations for each level-2 cluster")')
              write(IUN,'(1x,13I6)') (IDNI(i,2), i=1,nc2)
 
-        200  FORMAT(1x,A8,4F12.4)
+        200  FORMAT(1x,A16,4F12.4)
 
              WRITE(IUN,*)
              WRITE(IUN,'(" Dependent variable")')
@@ -1963,14 +1963,15 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                 WRITE(IUN,804)"Quad Location   ",tauhat, tauhatlow, tauhatup
             end if
         end if
-    write(iun,*)
-        WRITE(IUN,'("Random scale standard deviation")')
-        L2=P+R+S+ns
-        tauhat = exp(spar(ns))
-        tauhatlow = exp(spar(ns)-myz*se(l2))
-        tauhatup = exp(spar(ns)+myz*se(l2))
-        WRITE(IUN,804)'Std Dev                 ',tauhat, tauhatlow, tauhatup
-         
+        if(nors .ne. 1) then
+	    write(iun,*)
+	        WRITE(IUN,'("Random scale standard deviation")')
+	        L2=P+R+S+ns
+	        tauhat = exp(spar(ns))
+	        tauhatlow = exp(spar(ns)-myz*se(l2))
+	        tauhatup = exp(spar(ns)+myz*se(l2))
+	        WRITE(IUN,804)'Std Dev                 ',tauhat, tauhatlow, tauhatup
+		end if         
            
          CLOSE(IUN)
          CLOSE(IUNS)
@@ -3120,4 +3121,3 @@ SUBROUTINE CHSKY(A,B,N,NONPOS)
    END IF
    
 END SUBROUTINE CHSKY
-
