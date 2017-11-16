@@ -116,7 +116,7 @@ IMPLICIT NONE
       IPRIOR, IRBAD, IRES, IRT, IRTT, ISIG, IT, ITLAST, &
       IUN, IUNIF, IVSEP, IWT, KG, MAXJ, N, NCON, ND, NFN, &
       NGAM, NGAM1, NOMU, NONPOS, NPAR, NPARR, NPR, NQ, &
-      NQ1, NRP1, P, Q, R, RR, KS, NPROP, AQUAD, CHOL, maxits
+      NQ1, NRP1, P, Q, R, RR, KS, NPROP, AQUAD, CHOL, maxits, fail
 
    INTEGER :: INITIALIZED = 0
 
@@ -1103,7 +1103,7 @@ OPEN(1,FILE=FILEDEF)
    ! *****************************************************
    !  start iterations 
    ! *****************************************************
-   
+   fail = 0   
    ITLAST = 0 
    RIDGE  = 0.0D0
    RIDGEMAX = 0.0D0
@@ -1220,6 +1220,7 @@ open(23, file='mixor.its')
          ISIG    = 0
          IER     = 0
          NONPOS  = 1
+         fail = 1
       
          ! NORI    = 0
          ! rloglp  = -999999999999999.0D0
@@ -2203,6 +2204,7 @@ open(23, file='mixor.its')
          879 FORMAT(///,1X,'==> WARNING!  Estimation Difficulties Occurred at Iteration', &
                    I4,/,1x,'==> The model was fit with one less random effect than was requested', &
                       /,' ier = ',i4,' nonpos = ',i4,' isig = ',i4)
+         fail = 1
       ENDIF      
 
       ! change weights and nodes for empirical prior
@@ -2433,8 +2435,14 @@ IMPLICIT NONE
    ENDIF
 
    ALLOCATE(IPARMLAB(NPAR))
-write(5,*) rlogl, it
-close(5)
+   if(fail==0) then
+      write(5,*) rlogl, it
+   else
+      write(5,*) rlogl, maxits+10
+      write(*,*) "Bad run of mixor!"
+   end if
+   close(5)
+   
    WRITE(2,455)
    455 FORMAT(///,1x,'---------------------------------------------------------', &
                 /,1x,'* Final Results - Maximum Marginal Likelihood Estimates *', &
