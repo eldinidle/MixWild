@@ -447,7 +447,7 @@ PROGRAM mixregmls_subject
     close(1)
 
 
-    CALL SYSTEM("MIXREG")
+    CALL SYSTEM("./mixreg")
     open(unit=1,file="mixreg.lik")
     read(1,*) logl, npar
     close(1)
@@ -496,7 +496,7 @@ PROGRAM mixregmls_subject
     end do
     close(1)
     deallocate(temp3)
-    CALL SYSTEM("DEL mixreg.lik mixreg.est mixreg_temp.dat mixreg.var mixreg.dev mixreg.def temp_*")       
+    CALL SYSTEM("rm mixreg.lik mixreg.est mixreg_temp.dat mixreg.var mixreg.dev mixreg.def temp_*")       
     
     
     IUN    = 16
@@ -563,11 +563,11 @@ PROGRAM mixregmls_subject
     CALL mixregmlsEST(IDNI,Y,X,U,W,BLAB,ALAB,TLAB,NC2,P,R,S,CONV,NQ,AQUAD,MAXIT,NCENT,RIDGEIN, &
                        BETA,TAU,SPAR,mychol,thetas,thetavs,snint,ncov,nors,maxk)
 
-    FILEOUT2 = "COPY MIXREGmLS1.OUT+MIXREGmLS3.OUT+MIXREGmLS2.OUT " // FILEOUT
+    FILEOUT2 = "cat MIXREGmLS1.OUT+MIXREGmLS3.OUT MIXREGmLS2.OUT >> " // FILEOUT
     CALL SYSTEM(FILEOUT2)
-    CALL SYSTEM("DEL mixregmls1.OUT mixregmls2.OUT mixregmls3.OUT")
+    CALL SYSTEM("rm mixregmls1.OUT mixregmls2.OUT mixregmls3.OUT")
     call system("mkdir work")
-    call system("move mixregmls_.* work")
+    call system("mv mixregmls_.* work")
 
     if(no2nd .ne. 1) then
         allocate(tempdata(nvar3))
@@ -604,7 +604,7 @@ PROGRAM mixregmls_subject
             write(1,*) nc2, r,1, nreps, 123
         end if
         close(1)
-        call system("mix_random.exe")
+        call system("./mix_random")
         
         open(1, file="repeat_mixreg.def")
         write(1,*) trim(fileprefix)//'_level2.dat'
@@ -647,8 +647,8 @@ PROGRAM mixregmls_subject
             write(1,*) (var2Label(k+I), I=1,Pto)
          END IF
         CLOSE(1)
-        call system("copy repeat_mixreg.def "//trim(fileprefix)//"_repeat_mixreg.def")
-        call system("repeat_mixreg.exe")
+        call system("cp repeat_mixreg.def "//trim(fileprefix)//"_repeat_mixreg.def")
+        call system("./repeat_mixreg")
         
         open(3, file=trim(fileprefix)//'_desc2.out')
          ALLOCATE(tempVector(nc2))
@@ -718,9 +718,9 @@ PROGRAM mixregmls_subject
 
          close(3)
             write(mystr, '(I5)') nreps
-        CALL SYSTEM("copy "//trim(fileprefix)//"_desc2.out+"//trim(fileprefix) &
-                    //"_random_"//trim(adjustl(mystr))//".out "//trim(fileprefix)//"_2.out")
-        call system("del "//trim(fileprefix)//"_desc2.out")
+        CALL SYSTEM("cat "//trim(fileprefix)//"_desc2.out "//trim(fileprefix) &
+                    //"_random_"//trim(adjustl(mystr))//".out >> "//trim(fileprefix)//"_2.out")
+        call system("rm "//trim(fileprefix)//"_desc2.out")
     end if
 
     !deallocate(tempsums,tempdata,tempvector)

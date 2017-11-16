@@ -451,7 +451,7 @@ PROGRAM MIXREGmLS_subject
        CALL PRINTDESC(HEAD,FILEDAT,FILEOUT,CONV,NQ,AQUAD,MAXIT,NOBS,NC2,IDNI,YLABEL,meany,miny,maxy,stdy, &
        NCENT,P,R,S,BLAB,meanx,minx,maxx,stdx,ALAB,meanu,minu,maxu,stdu,TLAB,meanw,minw,maxw,stdw)
 
-    CALL SYSTEM("MIXREG")
+    CALL SYSTEM("./mixreg")
     open(unit=1,file="mixreg.lik")
     read(1,*) logl, npar
     close(1)
@@ -499,7 +499,7 @@ PROGRAM MIXREGmLS_subject
     end do
     close(1)
     deallocate(temp3)
-    CALL SYSTEM("DEL mixreg.lik mixreg.est mixreg_temp.dat mixreg.var mixreg.dev mixreg.def")       
+    CALL SYSTEM("rm mixreg.lik mixreg.est mixreg_temp.dat mixreg.var mixreg.dev mixreg.def")       
        
     IUN    = 16
     OPEN(UNIT=IUN,FILE="MIXREGmLS3.OUT")
@@ -564,11 +564,11 @@ PROGRAM MIXREGmLS_subject
     CALL mixregmlsEST(IDNI,Y,X,U,W,BLAB,ALAB,TLAB,NC2,P,R,S,CONV,NQ,AQUAD,MAXIT,NCENT,RIDGEIN, &
                        BETA,TAU,SPAR,mychol,thetas,thetavs,snint,ncov,nors,maxk)
 
-    FILEOUT2 = "COPY MIXREGmLS1.OUT+MIXREGmLS3.OUT+MIXREGmLS2.OUT " // FILEOUT
+    FILEOUT2 = "cat MIXREGmLS1.OUT+MIXREGmLS3.OUT MIXREGmLS2.OUT >> " // FILEOUT
     CALL SYSTEM(FILEOUT2)
-    CALL SYSTEM("DEL mixREGmLS1.OUT mixregmls3.out mixregmls2.out")
+    CALL SYSTEM("rm mixREGmLS1.OUT mixregmls3.out mixregmls2.out")
     call system("mkdir work")
-    call system("move mixregmls_.* work")
+    call system("mv mixregmls_.* work")
     
     if(no2nd .ne. 1) then
         allocate(tempdata(nvar3))
@@ -605,7 +605,7 @@ PROGRAM MIXREGmLS_subject
             write(1,*) nc2, r, 1, nreps, 123
         end if
         close(1)
-        call system("mix_random")
+        call system("./mix_random")
         
         open(1, file="repeat_mixor.def")
         write(1,*) trim(fileprefix)//'_level2.dat'
@@ -649,8 +649,8 @@ PROGRAM MIXREGmLS_subject
             write(1,*) (var2Label(k+I), I=1,Pto)
          END IF
         CLOSE(1)
-        call system("copy repeat_mixor.def "//trim(fileprefix)//"_repeat_mixor.def")
-        call system("repeat_mixor")
+        call system("cp repeat_mixor.def "//trim(fileprefix)//"_repeat_mixor.def")
+        call system("./repeat_mixor")
         
         open(3, file=trim(fileprefix)//'_desc2.out')
          ALLOCATE(tempVector(nc2))
@@ -720,11 +720,11 @@ PROGRAM MIXREGmLS_subject
 
          close(3)
             write(mystr, '(I5)') nreps
-            tempstr = "copy "//trim(fileprefix)//"_desc2.out+"//trim(fileprefix)// &
-                    "_random_"//trim(adjustl(mystr))//".out "//trim(fileprefix)//"_2.out"
+            tempstr = "cat "//trim(fileprefix)//"_desc2.out "//trim(fileprefix)// &
+                    "_random_"//trim(adjustl(mystr))//".out >> "//trim(fileprefix)//"_2.out"
         CALL SYSTEM(tempstr)
-    call system("del "//trim(fileprefix)//"_desc2.out")
-    CALL SYSTEM("DEL temp_.* mixor.est mixor.var")       
+    call system("rm "//trim(fileprefix)//"_desc2.out")
+    CALL SYSTEM("rm temp_.* mixor.est mixor.var")       
     end if
 CONTAINS
 
