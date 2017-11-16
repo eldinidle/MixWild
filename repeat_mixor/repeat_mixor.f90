@@ -237,7 +237,7 @@ PROGRAM repeat_mixor
         end do
         close(n*5)
 
-        CALL SYSTEM("MIXOR > temp_")
+        CALL SYSTEM("./mixor > temp_")
         open(n*5+4, file="mixor.lik")
         read(n*5+4,*) liks(n), numits
         close(n*5+4)
@@ -299,14 +299,14 @@ PROGRAM repeat_mixor
     
      804 FORMAT(A16,4(4x,F12.5))
      call system("mkdir work")
-     call system("move mixor.est work/")
-     call system("move mixor.var work/")
-     call system("move mixor.lik work/")
-     call system("move mixor.its work/")
-     call system("move mixor.def work/")
-     call system("move temp_* work/")
-     call system("move *_.dat work/")
-     call system("move *_x.out work/")
+     call system("mv mixor.est work/")
+     call system("mv mixor.var work/")
+     call system("mv mixor.lik work/")
+     call system("mv mixor.its work/")
+     call system("mv mixor.def work/")
+     call system("mv temp_* work/")
+     call system("mv *_.dat work/")
+     call system("mv *_x.out work/")
 
 contains
 
