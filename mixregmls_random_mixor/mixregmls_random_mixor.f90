@@ -468,7 +468,7 @@ PROGRAM MIXREGmLS_subject
         end if
     end do
     close(1)
-    call chams(mychol,v,r,1,0)
+!    call chams(mychol,v,r,1,0)
 
     open(unit=1,file="mixreg.var")
     allocate(temp3(npar))
@@ -558,6 +558,7 @@ PROGRAM MIXREGmLS_subject
 
  804 FORMAT(A16,4(4x,F12.5))
  805 FORMAT(A10,I0,I0,4X,4(4x,F12.5))
+v = mychol
     call CHSKY(v,mychol,r,myio)
     ! estimation subroutine 
     ! writes results out to mixregmls2.OUT
