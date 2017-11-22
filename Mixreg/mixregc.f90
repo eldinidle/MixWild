@@ -55,7 +55,7 @@ IMPLICIT NONE
    INTEGER ,POINTER ::IDNI(:)
    
    CHARACTER (LEN=4), ALLOCATABLE :: IXLAB(:)
-   CHARACTER*80 HEAD, head2
+   CHARACTER(LEN=4) :: HEAD(36)
    
    CHARACTER (LEN=16), ALLOCATABLE :: IALABEL(:), IBLABEL(:)
    
@@ -177,8 +177,8 @@ IMPLICIT NONE
    ! AND THEN PARAMETERS AND STARTING VALUES FROM RRM.DEF
 
    OPEN(1,ACTION='READ', FILE=FILENAMES(1))
-   READ(1,*) HEAD
-   READ(1,*) HEAD2
+    READ(1,9) HEAD
+ 9  FORMAT(18A4)
    READ(1,"(A80)")FILEDAT
    READ(1,"(A80)")FILEOUT
    READ(1,"(80X)")         ! Skip over the DEF file name
@@ -712,8 +712,7 @@ IMPLICIT NONE
       WRITE(2,*)
    ENDIF
     
-   WRITE(2,*) HEAD
-   WRITE(2,*) HEAD2
+   WRITE(2,9) HEAD
 
    WRITE(2,255)
    255 FORMAT(//,1x,'Numbers of observations',/,1x,'-----------------------',/)
