@@ -480,8 +480,6 @@ PROGRAM MIXREGLS_subject
         close(1)
         
         call system("mix_random")
-        call system("move mix_random.def work")
-        call system("move "//trim(fileprefix)//"_ebrandom.dat work")
 
         open(1, file="repeat_mixor.def")
         write(1,*) trim(fileprefix)//'_level2.dat'
@@ -599,6 +597,8 @@ PROGRAM MIXREGLS_subject
             write(mystr, '(I5)') nreps
         CALL SYSTEM("copy "//trim(fileprefix)//"_desc2.out+"//trim(fileprefix) &
                     //"_random_"//trim(adjustl(mystr))//".out "//trim(fileprefix)//"_2.out")
+        call system("move mix_random.def work")
+        call system("move "//trim(fileprefix)//"_ebrandom.dat work")
         call system("del "//trim(fileprefix)//"_desc2.out "//trim(fileprefix)//"_random_"//trim(adjustl(mystr))//".out")
     end if
 CONTAINS
