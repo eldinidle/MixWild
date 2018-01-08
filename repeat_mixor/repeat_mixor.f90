@@ -153,8 +153,8 @@ PROGRAM repeat_mixor
 
         filetempdat = trim(fileprefix) // "_.dat"
     OPEN(1,FILE="mixor.def")
-        WRITE(1,9) "                                                                               "
-        WRITE(1,9) "                                                                               "
+        WRITE(1,9) " x                                                                              "
+        WRITE(1,9) " x                                                                              "
     9 FORMAT(18A4)
         WRITE(1,5) adjustl(filetempdat)
         if(len(trim(fileprefix)) > 34) then
