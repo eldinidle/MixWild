@@ -603,6 +603,7 @@ PROGRAM MIXREGLS_subject
         CALL SYSTEM("copy "//trim(fileprefix)//"_desc2.out+"//trim(fileprefix) &
                     //"_random_"//trim(adjustl(mystr))//".out "//trim(fileprefix)//"_2.out")
         call system("del "//trim(fileprefix)//"_desc2.out")
+        call system("move "//trim(fileprefix)//"_random* work")
     end if
     !deallocate(tempsums,tempdata,tempvector)
 CONTAINS
