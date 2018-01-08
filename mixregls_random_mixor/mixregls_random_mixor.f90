@@ -598,7 +598,7 @@ PROGRAM MIXREGLS_subject
         CALL SYSTEM("copy "//trim(fileprefix)//"_desc2.out+"//trim(fileprefix) &
                     //"_random_"//trim(adjustl(mystr))//".out "//trim(fileprefix)//"_2.out")
         call system("move mix_random.def work")
-        call system("move "//trim(fileprefix)//"_ebrandom.dat work")
+        call system("move "//trim(fileprefix)//"_ebvar.dat work")
         call system("del "//trim(fileprefix)//"_desc2.out "//trim(fileprefix)//"_random_"//trim(adjustl(mystr))//".out")
     end if
 CONTAINS
