@@ -622,7 +622,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
     INTEGER,ALLOCATABLE,intent(in) :: XIND(:),UIND(:),WIND(:),varind(:),nsind(:)
     INTEGER,ALLOCATABLE,intent(out) :: idni(:,:)
 
-    INTEGER :: myPASS,I,K,ICOUNT,myindex,IDTEMP,IDOLD,hasmiss,nvartotal,discardi
+    INTEGER :: myPASS,I,K,ICOUNT,myindex,IDTEMP,IDOLD,hasmiss,nvartotal,discardi,m
     REAL(KIND=8),ALLOCATABLE:: TEMPR(:)
     INTEGER,ALLOCATABLE :: allvarsind(:)
     LOGICAL FIRST, FP_EQUAL
