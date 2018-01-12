@@ -852,6 +852,8 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                                         (u(icount+j,m),m=1,rold), (w(icount+j,m), m=1,sold), &
                                         (var(icount+j,m), m=1,nv), (tempsums(i,m)/k,m=1,nvar2)
                             end do
+                        tempsums(i,:) = 0
+                        varavg(i,:) = 0
                     end if
                     K     = 1
                  ENDIF
