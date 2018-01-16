@@ -614,16 +614,24 @@ PROGRAM MIXREGLS_subject
 
          close(3)
             write(mystr, '(I5)') nreps
-
+        
+#if defined(_WIN32)
+        CALL SYSTEM("copy "//trim(fileprefix)//"_desc2.out+"//trim(fileprefix) &
+                    //"_random_"//trim(adjustl(mystr))//".out "//trim(fileprefix)//"_2.out")
+        call system("move mix_random.def work")
+        call system("move "//trim(fileprefix)//"_ebvar.dat work")
+        call system("move "//trim(fileprefix)//"_random.def work")
+        call system("del "//trim(fileprefix)//"_desc2.out "//trim(fileprefix)//"_random_"//trim(adjustl(mystr))//".out")
+#else
         CALL SYSTEM("cat "//trim(fileprefix)//"_desc2.out "//trim(fileprefix) &
-                    //"_random_"//trim(adjustl(mystr))//".out >> "//trim(fileprefix)//"_2.out")
+                     //"_random_"//trim(adjustl(mystr))//".out >> "//trim(fileprefix)//"_2.out")
         call system("rm "//trim(fileprefix)//"_desc2.out")
         call system("rm "//trim(fileprefix)//"_random_"//trim(adjustl(mystr))//".out")
-
         call system("mv mix_random.def work")
         call system("mv "//trim(fileprefix)//"_ebvar.dat work")
         call system("mv "//trim(fileprefix)//"_random.def work")
         call system("mv "//trim(fileprefix)//"_ebrandom.dat work")
+#endif
 
     end if
 CONTAINS
