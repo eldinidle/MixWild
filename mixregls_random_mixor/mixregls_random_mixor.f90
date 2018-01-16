@@ -602,6 +602,7 @@ PROGRAM MIXREGLS_subject
         call system("rm "//trim(fileprefix)//"_random_"//trim(adjustl(mystr))//".out")
 
         call system("mv mix_random.def work")
+        call system("mv "//trim(fileprefix)//"_ebvar.dat work")
         call system("mv "//trim(fileprefix)//"_ebrandom.dat work")
 
     end if
