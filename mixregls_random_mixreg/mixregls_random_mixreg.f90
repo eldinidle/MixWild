@@ -1188,7 +1188,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
              WRITE(IUN,*)
              WRITE(IUN,'(" data and output files:")')
              WRITE(IUN,"(1x,a80)")FILEDAT
-             WRITE(IUN,"(1x,a80)")FILEOUT
+             WRITE(IUN,"(1x,a80)")trim(FILEprefix)//"_1.out"
              WRITE(IUN,*)
              WRITE(IUN,"(' CONVERGENCE CRITERION = ',F11.8)")CONV
              WRITE(IUN,"(' RIDGEIN    = ',F8.4)")RIDGEIN
