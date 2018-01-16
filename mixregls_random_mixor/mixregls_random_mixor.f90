@@ -446,7 +446,7 @@ PROGRAM MIXREGLS_subject
      call system("mkdir work")
      call system("move mixregls5* work")
 
-#if defined(_WIN32)
+#else
      FILEOUT2 = "cat mixREGLS51.OUT mixREGLS52.OUT >> " // FILEOUT
      CALL SYSTEM(FILEOUT2)
      CALL SYSTEM("del mixREGLS51.OUT mixREGLS52.out")
