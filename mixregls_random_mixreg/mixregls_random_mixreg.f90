@@ -604,6 +604,7 @@ PROGRAM MIXREGLS_subject
         call system("rm "//trim(fileprefix)//"_desc2.out")
         call system("mv mix_random.def work")
         call system("mv "//trim(fileprefix)//"_ebvar.dat work")
+        call system("mv "//trim(fileprefix)//"_random* work")
 
     end if
     !deallocate(tempsums,tempdata,tempvector)
