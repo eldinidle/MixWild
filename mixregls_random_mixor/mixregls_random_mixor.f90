@@ -537,8 +537,13 @@ PROGRAM MIXREGLS_subject
             write(1,*) (var2Label(k+I), I=1,Pto)
          END IF
         CLOSE(1)
-        call system("cp repeat_mixor.def "//trim(fileprefix)//"_repeat_mixor.def")
-        call system("./repeat_mixor")
+#if defined(_WIN32)
+         call system("copy repeat_mixor.def "//trim(fileprefix)//"_repeat_mixor.def")
+         call system("repeat_mixor")
+#else
+         call system("cp repeat_mixor.def "//trim(fileprefix)//"_repeat_mixor.def")
+         call system("./repeat_mixor")
+#endif
         open(3, file=trim(fileprefix)//'_desc2.out')
         
     write(3,9) head
