@@ -13,7 +13,7 @@
 
 PROGRAM MIXREGLS_subject
     implicit none
-    INTEGER :: I,NOBS,NVAR,NQ,AQUAD,ID2IND,YIND,P,R,S,PP,RR,SS,MISS,MAXK,NC2,&
+    INTEGER :: I,NOBS,NVAR,NQ,AQUAD,ID2IND,YIND,P,R,S,PP,RR,SS,MISS,MAXK,NC2,num0,&
                 MAXIT,NCENT,PNINT,RNINT,SNINT,POLD,ROLD,SOLD,j,ll,kv,ko,h,&
                 nvar2,pfixed,ptheta,pomega,pto,k,nvar3,ncov,ns,maxj,pv,rv,sv,nv,nreps,nors,discard0,no2nd
     INTEGER,ALLOCATABLE :: XIND(:),UIND(:),WIND(:),IDNI(:,:),var2IND(:),icode(:),varIND(:)
@@ -305,10 +305,10 @@ PROGRAM MIXREGLS_subject
 ! THE DATA MUST BE SORTED BY THE ID VARIABLE
 
 ! NOTE THAT Y, X, U, W, IDNI ARE ALLOCATED IN READAT
-    CALL READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,&
-                Y,X,U,W,var,varavg,tempsums,IDNI,&
-                ID2IND,YIND,XIND,UIND,WIND,varind,var2ind,&
-                MISS,YMISS,pold,rold,sold,pnint,rnint,snint,discard0)
+    CALL READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,&
+            var,varavg,tempsums,IDNI,ID2IND,YIND,XIND,UIND,WIND,&
+            varind,var2ind,MISS,YMISS,pold,rold,sold,pnint,rnint,&
+            snint,discard0,num0,fileprefix)
 
     if(pnint .ne. 1) then
         x(:,1) = 1
@@ -433,8 +433,8 @@ PROGRAM MIXREGLS_subject
 
        ! PRINT OUT THE descriptives and starting values
        ! writes results out to mixREGLS1.OUT
-       CALL PRINTDESC(HEAD,FILEDAT,FILEOUT,CONV,NQ,AQUAD,MAXIT,NOBS,NC2,IDNI,YLABEL,meany,miny,maxy,stdy, &
-       NCENT,P,R,S,BLAB,meanx,minx,maxx,stdx,ALAB,meanu,minu,maxu,stdu,TLAB,meanw,minw,maxw,stdw)
+       CALL PRINTDESC(HEAD,FILEDAT,FILEprefix,CONV,NQ,AQUAD,MAXIT,NOBS,NC2,IDNI,YLABEL,meany,miny,maxy,stdy, &
+       NCENT,P,R,S,BLAB,meanx,minx,maxx,stdx,ALAB,meanu,minu,maxu,stdu,TLAB,meanw,minw,maxw,stdw,num0)
 
     CALL mixREGLSEST(IDNI,Y,X,U,W,BLAB,ALAB,TLAB,NC2,P,R,S,CONV,NQ,AQUAD,MAXIT,NCENT,ncov,RIDGEIN, &
                        BETA,TAU,SPAR,alpha,thetas,thetavs,maxk,nors)
@@ -480,6 +480,7 @@ PROGRAM MIXREGLS_subject
         close(1)
         
         call system("mix_random")
+
         open(1, file="repeat_mixor.def")
         write(1,*) trim(fileprefix)//'_level2.dat'
         write(1,*) trim(fileprefix)//'_ebrandom.dat'
@@ -596,7 +597,10 @@ PROGRAM MIXREGLS_subject
             write(mystr, '(I5)') nreps
         CALL SYSTEM("copy "//trim(fileprefix)//"_desc2.out+"//trim(fileprefix) &
                     //"_random_"//trim(adjustl(mystr))//".out "//trim(fileprefix)//"_2.out")
-        call system("del "//trim(fileprefix)//"_desc2.out")
+        call system("move mix_random.def work")
+        call system("move "//trim(fileprefix)//"_ebvar.dat work")
+        call system("move "//trim(fileprefix)//"_random.def work")
+        call system("del "//trim(fileprefix)//"_desc2.out "//trim(fileprefix)//"_random_"//trim(adjustl(mystr))//".out")
     end if
 CONTAINS
 
@@ -607,18 +611,19 @@ CONTAINS
 
 ! NOTE THAT Y, X, U, W, IDNI ARE ALLOCATED IN READAT
 SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,tempsums, &
-    IDNI,ID2IND,YIND,XIND,UIND,WIND,varind,nsind,miss,YMISS,pold,rold,sold,pnint,rnint,snint,discard0)
+    IDNI,ID2IND,YIND,XIND,UIND,WIND,varind,nsind,miss,YMISS,pold,rold,sold,pnint,rnint,snint, &
+    discard0,num0,fileprefix)
     implicit none
         
-    CHARACTER(LEN=80),intent(in) :: FILEDAT
+    CHARACTER(LEN=80),intent(in) :: FILEDAT, fileprefix
     integer,intent(in) :: nvar,r,p,s,yind,miss,pold,rold,sold,nv,pnint,rnint,snint,id2ind,nvar2,discard0
-    integer,intent(out) :: nc2,nobs,maxk
+    integer,intent(out) :: nc2,nobs,maxk,num0
     REAL(KIND=8),intent(in) :: YMISS
     REAL(KIND=8),ALLOCATABLE,intent(out):: Y(:),X(:,:),U(:,:),W(:,:),var(:,:),varavg(:,:),tempsums(:,:)
     INTEGER,ALLOCATABLE,intent(in) :: XIND(:),UIND(:),WIND(:),varind(:),nsind(:)
     INTEGER,ALLOCATABLE,intent(out) :: idni(:,:)
 
-    INTEGER :: myPASS,I,K,ICOUNT,myindex,IDTEMP,IDOLD,hasmiss,nvartotal,discardi
+    INTEGER :: myPASS,I,K,ICOUNT,myindex,IDTEMP,IDOLD,hasmiss,nvartotal,discardi,m
     REAL(KIND=8),ALLOCATABLE:: TEMPR(:)
     INTEGER,ALLOCATABLE :: allvarsind(:)
     LOGICAL FIRST, FP_EQUAL
@@ -634,6 +639,8 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
         allvarsIND(pold+rold+2:pold+rold+sold+1) = wind(1:sold)
         allvarsIND(pold+rold+sold+2:pold+rold+sold+1+nv) = varind(1:nv)
         allvarsIND(pold+rold+sold+2+nv:nvarTotal) = nsind(1:nvar2)
+        num0 = 0
+        if(discard0 .ne. 0) open(16, file=trim(fileprefix)//"_removed.dat")
 
         ! INITIALIZE
         DO myPASS = 1,2
@@ -711,7 +718,15 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                             I     = I+1
                         else
                             write(*,*) "REMOVED"
+                            num0 = num0 + 1
                             icount = icount - k
+                            do j=1,k
+                                write(16,'(i9,16f10.3)') idold, y(icount+j), (x(icount+j,m),m=1,pold), &
+                                        (u(icount+j,m),m=1,rold), (w(icount+j,m), m=1,sold), &
+                                        (var(icount+j,m), m=1,nv), (tempsums(i,m)/k,m=1,nvar2)
+                            end do
+                        tempsums(i,:) = 0
+                        varavg(i,:) = 0
                         end if
                         K     = 1
                     ENDIF
@@ -763,7 +778,13 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                             IF (K .GT. MAXK) MAXK = K
                         else
                             write(*,*) "REMOVED"
+                            num0 = num0 + 1
                             icount = icount - k
+                            do j=1,k
+                                write(16,'(i9,16f10.3)') idold, y(icount+j), (x(icount+j,m),m=1,pold), &
+                                        (u(icount+j,m),m=1,rold), (w(icount+j,m), m=1,sold), &
+                                        (var(icount+j,m), m=1,nv), (tempsums(i,m)/k,m=1,nvar2)
+                            end do
                             i = i -1
                         end if
 
@@ -1138,14 +1159,14 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
 
 
 ! PRINT OUT THE descriptives and starting values
-    SUBROUTINE PRINTDESC(HEAD,FILEDAT,FILEOUT,CONV,NQ,AQUAD,MAXIT,NOBS,NC2,IDNI,YLABEL,meany,miny,maxy,stdy, &
-               NCENT,P,R,S,BLAB,meanx,minx,maxx,stdx,ALAB,meanu,minu,maxu,stdu,TLAB,meanw,minw,maxw,stdw)
+    SUBROUTINE PRINTDESC(HEAD,FILEDAT,FILEprefix,CONV,NQ,AQUAD,MAXIT,NOBS,NC2,IDNI,YLABEL,meany,miny,maxy,stdy, &
+               NCENT,P,R,S,BLAB,meanx,minx,maxx,stdx,ALAB,meanu,minu,maxu,stdu,TLAB,meanw,minw,maxw,stdw,num0)
 
         CHARACTER(LEN=16),INTENT(IN):: YLABEL
         CHARACTER(LEN=16),INTENT(IN),dimension(:):: BLAB,ALAB,TLAB
         CHARACTER(LEN=4),INTENT(IN),DIMENSION(:):: HEAD
-        CHARACTER(LEN=80),INTENT(IN):: FILEDAT, FILEOUT
-        INTEGER,INTENT(IN)::NQ,AQUAD,MAXIT,NOBS,NC2,NCENT,P,R,S
+        CHARACTER(LEN=80),INTENT(IN):: FILEDAT, FILEprefix
+        INTEGER,INTENT(IN)::NQ,AQUAD,MAXIT,NOBS,NC2,NCENT,P,R,S,num0
         INTEGER,INTENT(IN),DIMENSION(:,:)::IDNI                ! ids and nobs per cluster
         REAL(KIND=8),INTENT(IN),dimension(:):: MEANX,MINX,MAXX,STDX,MEANU,MINU,MAXU,STDU,MEANW,MINW,MAXW,STDW
         REAL(KIND=8),INTENT(IN)::CONV,MEANY,MINY,MAXY,STDY
@@ -1163,7 +1184,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
              WRITE(IUN,*)
              WRITE(IUN,'(" data and output files:")')
              WRITE(IUN,"(1x,a80)")FILEDAT
-             WRITE(IUN,"(1x,a80)")FILEOUT
+             WRITE(IUN,"(1x,a80)")trim(FILEprefix)//"_1.out"
              WRITE(IUN,*)
              WRITE(IUN,"(' CONVERGENCE CRITERION = ',F11.8)")CONV
              WRITE(IUN,"(' RIDGEIN    = ',F8.4)")RIDGEIN
@@ -1229,6 +1250,9 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                 end do
                 WRITE(IUN,*)
              end if
+        if(discard0 .ne. 0) WRITE(IUN,508)num0
+        508 FORMAT(//,1x,'==> The number of level 2 observations removed because of non-varying responses =', I6)
+        if(discard0 .ne. 0) write(IUN,*) '(see '//trim(fileprefix)//'_removed.dat for information about those clusters)'
 
         CLOSE(IUN)
     END SUBROUTINE PRINTDESC
