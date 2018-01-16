@@ -478,11 +478,8 @@ PROGRAM MIXREGLS_subject
             write(1,*) nc2, 1, 1, nreps, 123
         end if
         close(1)
-        
-        call system("./mix_random")
 
-        call system("mv mix_random.def work")
-        call system("mv "//trim(fileprefix)//"_ebrandom.dat work")
+        call system("./mix_random")
 
         open(1, file="repeat_mixor.def")
         write(1,*) trim(fileprefix)//'_level2.dat'
@@ -603,6 +600,9 @@ PROGRAM MIXREGLS_subject
                     //"_random_"//trim(adjustl(mystr))//".out >> "//trim(fileprefix)//"_2.out")
         call system("rm "//trim(fileprefix)//"_desc2.out")
         call system("rm "//trim(fileprefix)//"_random_"//trim(adjustl(mystr))//".out")
+
+        call system("mv mix_random.def work")
+        call system("mv "//trim(fileprefix)//"_ebrandom.dat work")
 
     end if
 CONTAINS
