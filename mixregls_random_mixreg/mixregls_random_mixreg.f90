@@ -617,7 +617,7 @@ CONTAINS
 ! NOTE THAT Y, X, U, W, IDNI ARE ALLOCATED IN READAT
 SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,tempsums, &
     IDNI,ID2IND,YIND,XIND,UIND,WIND,varind,nsind,miss,YMISS,pold,rold,sold,pnint,rnint,snint,&
-    discard0,fileprefix,num0)
+    discard0,num0,fileprefix)
     implicit none
         
     CHARACTER(LEN=80),intent(in) :: FILEDAT,fileprefix
