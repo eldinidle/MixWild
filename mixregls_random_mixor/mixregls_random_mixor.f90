@@ -439,11 +439,21 @@ PROGRAM MIXREGLS_subject
     CALL mixREGLSEST(IDNI,Y,X,U,W,BLAB,ALAB,TLAB,NC2,P,R,S,CONV,NQ,AQUAD,MAXIT,NCENT,ncov,RIDGEIN, &
                        BETA,TAU,SPAR,alpha,thetas,thetavs,maxk,nors)
 
-    FILEOUT2 = "cat mixREGLS51.OUT mixREGLS52.OUT >> " // FILEOUT
-    CALL SYSTEM(FILEOUT2)
-    CALL SYSTEM("del mixREGLS51.OUT mixREGLS52.out")
-    call system("mkdir work")
-    call system("mv mixregls5* work")
+#if defined(_WIN32)
+     FILEOUT2 = "COPY mixREGLS51.OUT+mixREGLS52.OUT " // FILEOUT
+     CALL SYSTEM(FILEOUT2)
+     CALL SYSTEM("DEL mixREGLS51.OUT mixregls52.out")
+     call system("mkdir work")
+     call system("move mixregls5* work")
+
+#if defined(_WIN32)
+     FILEOUT2 = "cat mixREGLS51.OUT mixREGLS52.OUT >> " // FILEOUT
+     CALL SYSTEM(FILEOUT2)
+     CALL SYSTEM("del mixREGLS51.OUT mixREGLS52.out")
+     call system("mkdir work")
+     call system("mv mixregls5* work")
+#endif
+
     if(no2nd .ne. 1) then
         allocate(tempdata(nvar3))
         open(32,file=trim(fileprefix)//'_level2.dat')
