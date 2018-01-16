@@ -489,7 +489,11 @@ PROGRAM MIXREGLS_subject
         end if
         close(1)
 
+#if defined(_WIN32)
+        call system("mix_random")
+#else
         call system("./mix_random")
+#endif
 
         open(1, file="repeat_mixor.def")
         write(1,*) trim(fileprefix)//'_level2.dat'
