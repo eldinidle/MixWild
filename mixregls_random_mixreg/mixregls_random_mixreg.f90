@@ -540,8 +540,15 @@ PROGRAM MIXREGLS_subject
             write(1,*) (var2Label(k+I), I=1,Pto)
          END IF
         CLOSE(1)
+        
+#if defined(_WIN32)
+        call system("copy repeat_mixreg.def "//trim(fileprefix)//"_repeat_mixreg.def")
+        call system("repeat_mixreg")
+#else
         call system("cp repeat_mixreg.def "//trim(fileprefix)//"_repeat_mixreg.def")
         call system("./repeat_mixreg")
+#endif
+      
         open(3, file=trim(fileprefix)//'_desc2.out')
         
     write(3,9) head
@@ -613,12 +620,21 @@ PROGRAM MIXREGLS_subject
          close(3)
             write(mystr, '(I5)') nreps
 
+#if defined(_WIN32)        
+        call system("move mix_random.def work")
+        call system("move "//trim(fileprefix)//"_ebvar.dat work")
+        CALL SYSTEM("copy "//trim(fileprefix)//"_desc2.out+"//trim(fileprefix) &
+                    //"_random_"//trim(adjustl(mystr))//".out "//trim(fileprefix)//"_2.out")
+        call system("del "//trim(fileprefix)//"_desc2.out")
+        call system("move "//trim(fileprefix)//"_random* work")
+#else
         CALL SYSTEM("cat "//trim(fileprefix)//"_desc2.out "//trim(fileprefix) &
                     //"_random_"//trim(adjustl(mystr))//".out >> "//trim(fileprefix)//"_2.out")
         call system("rm "//trim(fileprefix)//"_desc2.out")
         call system("mv mix_random.def work")
         call system("mv "//trim(fileprefix)//"_ebvar.dat work")
         call system("mv "//trim(fileprefix)//"_random* work")
+#endif
 
     end if
     !deallocate(tempsums,tempdata,tempvector)
