@@ -237,7 +237,11 @@ PROGRAM repeat_mixor
         end do
         close(n*5)
 
+#if defined(_WIN32)
+        CALL SYSTEM("MIXOR > temp_")
+#else
         CALL SYSTEM("./mixor > temp_")
+#endif
         open(n*5+4, file="mixor.lik")
         read(n*5+4,*) liks(n), numits
         close(n*5+4)
