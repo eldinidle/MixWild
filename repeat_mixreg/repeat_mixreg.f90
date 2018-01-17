@@ -230,11 +230,14 @@ PROGRAM repeat_mixreg
         end do
         close(n*5)
 
-
-
+#if defined(_WIN32)
+        CALL SYSTEM("MIXREG > temp_")
+#else
         CALL SYSTEM("./mixreg > temp_")
-        call sleep(1)
+#endif
 
+        call sleep(1)
+        
         open(n*5+2, file="mixreg.est")
         do j=1,nvar3 !nvar-1 fixed effects plus the residual variance
             read(n*5+2,*) mystr, betas(n,j)
