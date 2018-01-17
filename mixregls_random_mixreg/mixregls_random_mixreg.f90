@@ -492,8 +492,13 @@ PROGRAM MIXREGLS_subject
             write(1,*) nc2, 1, 1, nreps, 123
         end if
         close(1)
-        
+
+#if defined(_WIN32)
+        call system("mix_random")
+#else
         call system("./mix_random")
+#endif
+
         open(1, file="repeat_mixreg.def")
         write(1,*) trim(fileprefix)//'_level2.dat'
         write(1,*) trim(fileprefix)//'_ebrandom.dat'
