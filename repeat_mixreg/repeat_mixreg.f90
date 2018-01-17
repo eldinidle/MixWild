@@ -299,13 +299,24 @@ PROGRAM repeat_mixreg
     
      804 FORMAT(A16,4(4x,F12.5))
      call system("mkdir work")
-     call system("mv mixreg.est work/")
-     call system("mv mixreg.var  work/")
-     call system("mv mixreg.lik  work/")
-     call system("mv mixreg.def  work/")
-     call system("mv temp_*  work/")
-     call system("mv *_.dat  work/")
-     call system("mv *_x.out work/")
+     
+#if defined(_WIN32)
+      call system("move mixreg.est work/")
+      call system("move mixreg.var  work/")
+      call system("move mixreg.lik  work/")
+      call system("move mixreg.def  work/")
+      call system("move temp_*  work/")
+      call system("move *_.dat  work/")
+      call system("move *_x.out work/")
+#else
+      call system("mv mixreg.est work/")
+      call system("mv mixreg.var  work/")
+      call system("mv mixreg.lik  work/")
+      call system("mv mixreg.def  work/")
+      call system("mv temp_*  work/")
+      call system("mv *_.dat  work/")
+      call system("mv *_x.out work/")
+#endif
 
 contains
 
