@@ -299,6 +299,16 @@ PROGRAM repeat_mixor
     
      804 FORMAT(A16,4(4x,F12.5))
      call system("mkdir work")
+#if defined(_WIN32)
+     call system("move mixor.est work/")
+     call system("move mixor.var work/")
+     call system("move mixor.lik work/")
+     call system("move mixor.its work/")
+     call system("move mixor.def work/")
+     call system("move temp_* work/")
+     call system("move *_.dat work/")
+     call system("move *_x.out work/")
+#else
      call system("mv mixor.est work/")
      call system("mv mixor.var work/")
      call system("mv mixor.lik work/")
@@ -307,6 +317,7 @@ PROGRAM repeat_mixor
      call system("mv temp_* work/")
      call system("mv *_.dat work/")
      call system("mv *_x.out work/")
+#endif
 
 contains
 
