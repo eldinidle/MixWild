@@ -230,8 +230,14 @@ PROGRAM repeat_mixreg
         end do
         close(n*5)
 
-
+#if defined(_WIN32)
         CALL SYSTEM("MIXREG > temp_")
+#else
+        CALL SYSTEM("./mixreg > temp_")
+#endif
+
+        call sleep(1)
+        
         open(n*5+2, file="mixreg.est")
         do j=1,nvar3 !nvar-1 fixed effects plus the residual variance
             read(n*5+2,*) mystr, betas(n,j)
@@ -293,13 +299,24 @@ PROGRAM repeat_mixreg
     
      804 FORMAT(A16,4(4x,F12.5))
      call system("mkdir work")
-     call system("move mixreg.est work/")
-     call system("move mixreg.var  work/")
-     call system("move mixreg.lik  work/")
-     call system("move mixreg.def  work/")
-     call system("move temp_*  work/")
-     call system("move *_.dat  work/")
-     call system("move *_x.out work/")
+     
+#if defined(_WIN32)
+      call system("move mixreg.est work/")
+      call system("move mixreg.var  work/")
+      call system("move mixreg.lik  work/")
+      call system("move mixreg.def  work/")
+      call system("move temp_*  work/")
+      call system("move *_.dat  work/")
+      call system("move *_x.out work/")
+#else
+      call system("mv mixreg.est work/")
+      call system("mv mixreg.var  work/")
+      call system("mv mixreg.lik  work/")
+      call system("mv mixreg.def  work/")
+      call system("mv temp_*  work/")
+      call system("mv *_.dat  work/")
+      call system("mv *_x.out work/")
+#endif
 
 contains
 
