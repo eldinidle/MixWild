@@ -43,7 +43,7 @@ gfortran -c -o sstar.o -g -static sstar.f90
 gfortran -c -o mixregls_random_mixor.o -g -static mixregls_random_mixor.f90
 ar -qs libmix.a hermite_rule.o sstar.o mixregls_random_mixor.o 
 gfortran libmix.a -L/usr/local/gfortran/lib -static-libgcc -static-libgfortran -o mixregls_random_mixor
-cd..
+cd ..
 echo 'repeat_mixor'
 cd repeat_mixor 
 gfortran -c -o repeat_mixor.o -g -static repeat_mixor.f90

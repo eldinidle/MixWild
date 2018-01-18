@@ -452,7 +452,12 @@ PROGRAM MIXREGmLS_subject
        CALL PRINTDESC(HEAD,FILEDAT,FILEprefix,CONV,NQ,AQUAD,MAXIT,NOBS,NC2,IDNI,YLABEL,meany,miny,maxy,stdy, &
        NCENT,P,R,S,BLAB,meanx,minx,maxx,stdx,ALAB,meanu,minu,maxu,stdu,TLAB,meanw,minw,maxw,stdw,num0)
 
-    CALL SYSTEM("MIXREG")
+#if defined(_WIN32)
+     CALL SYSTEM("MIXREG")
+#else
+     CALL SYSTEM("./mixreg")
+#endif
+
     open(unit=1,file="mixreg.lik")
     read(1,*) logl, npar
     close(1)
@@ -500,7 +505,12 @@ PROGRAM MIXREGmLS_subject
     end do
     close(1)
     deallocate(temp3)
-    CALL SYSTEM("DEL mixreg.lik mixreg.est mixreg_temp.dat mixreg.var mixreg.dev mixreg.def")       
+
+#if defined(_WIN32)
+    CALL SYSTEM("DEL mixreg.lik mixreg.est mixreg_temp.dat mixreg.var mixreg.dev mixreg.def")
+#else
+    CALL SYSTEM("rm mixreg.lik mixreg.est mixreg_temp.dat mixreg.var mixreg.dev mixreg.def")       
+#endif
        
     IUN    = 16
     OPEN(UNIT=IUN,FILE="MIXREGmLS3.OUT")
@@ -566,11 +576,19 @@ v = mychol
     CALL mixregmlsEST(IDNI,Y,X,U,W,BLAB,ALAB,TLAB,NC2,P,R,S,CONV,NQ,AQUAD,MAXIT,NCENT,RIDGEIN, &
                        BETA,TAU,SPAR,mychol,thetas,thetavs,snint,ncov,nors,maxk)
 
-    FILEOUT2 = "COPY MIXREGmLS1.OUT+MIXREGmLS3.OUT+MIXREGmLS2.OUT " // FILEOUT
+#if defined(_WIN32)
+     FILEOUT2 = "COPY MIXREGmLS1.OUT+MIXREGmLS3.OUT+MIXREGmLS2.OUT " // FILEOUT
+     CALL SYSTEM(FILEOUT2)
+     CALL SYSTEM("DEL mixREGmLS1.OUT mixregmls3.out mixregmls2.out")
+     call system("mkdir work")
+     call system("move mixregmls_.* work")
+#else
+    FILEOUT2 = "cat MIXREGmLS1.OUT+MIXREGmLS3.OUT MIXREGmLS2.OUT >> " // FILEOUT
     CALL SYSTEM(FILEOUT2)
-    CALL SYSTEM("DEL mixREGmLS1.OUT mixregmls3.out mixregmls2.out")
+    CALL SYSTEM("rm mixREGmLS1.OUT mixregmls3.out mixregmls2.out")
     call system("mkdir work")
-    call system("move mixregmls_.* work")
+    call system("mv mixregmls_.* work")
+#endif
     
     if(no2nd .ne. 1) then
         allocate(tempdata(nvar3))
@@ -607,8 +625,13 @@ v = mychol
             write(1,*) nc2, r, 1, nreps, 123
         end if
         close(1)
-        call system("mix_random")
-        
+
+#if defined(_WIN32)
+        call system("mix_random")        
+#else
+        call system("./mix_random")
+#endif
+
         open(1, file="repeat_mixor.def")
         write(1,*) trim(fileprefix)//'_level2.dat'
         write(1,*) trim(fileprefix)//'_ebrandom.dat'
@@ -651,8 +674,14 @@ v = mychol
             write(1,*) (var2Label(k+I), I=1,Pto)
          END IF
         CLOSE(1)
-        call system("copy repeat_mixor.def "//trim(fileprefix)//"_repeat_mixor.def")
-        call system("repeat_mixor")
+
+#if defined(_WIN32)
+         call system("copy repeat_mixor.def "//trim(fileprefix)//"_repeat_mixor.def")
+         call system("repeat_mixor")
+#else
+         call system("cp repeat_mixor.def "//trim(fileprefix)//"_repeat_mixor.def")
+         call system("./repeat_mixor")
+#endif
         
         open(3, file=trim(fileprefix)//'_desc2.out')
          ALLOCATE(tempVector(nc2))
@@ -722,12 +751,26 @@ v = mychol
 
          close(3)
             write(mystr, '(I5)') nreps
-        call system("move mix_random.def work")
-        call system("move "//trim(fileprefix)//"_ebvar.dat work")
-        CALL SYSTEM("copy "//trim(fileprefix)//"_desc2.out+"//trim(fileprefix) &
-                    //"_random_"//trim(adjustl(mystr))//".out "//trim(fileprefix)//"_2.out")
-        call system("del "//trim(fileprefix)//"_desc2.out")
-        call system("move "//trim(fileprefix)//"_random* work")
+
+#if defined(_WIN32)
+         call system("move mix_random.def work")
+         call system("move "//trim(fileprefix)//"_ebvar.dat work")
+         CALL SYSTEM("copy "//trim(fileprefix)//"_desc2.out+"//trim(fileprefix) &
+                     //"_random_"//trim(adjustl(mystr))//".out "//trim(fileprefix)//"_2.out")
+         call system("del "//trim(fileprefix)//"_desc2.out")
+         call system("move "//trim(fileprefix)//"_random* work")
+#else
+             tempstr = "cat "//trim(fileprefix)//"_desc2.out "//trim(fileprefix)// &
+                     "_random_"//trim(adjustl(mystr))//".out >> "//trim(fileprefix)//"_2.out"
+         CALL SYSTEM(tempstr)
+ 
+     call system("rm "//trim(fileprefix)//"_desc2.out")
+     call system("mv "//trim(fileprefix)//"_random* work")
+     call system("mv "//trim(fileprefix)//"_ebvar.dat work")
+     call system("mv mix_random.def work")
+   !!!  CALL SYSTEM("rm temp_.* mixor.est mixor.var")     TODO: @Rachel Should we keep this
+#endif
+
     end if
 CONTAINS
 

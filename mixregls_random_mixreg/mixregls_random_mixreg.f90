@@ -444,11 +444,20 @@ PROGRAM MIXREGLS_subject
     CALL mixREGLSEST(IDNI,Y,X,U,W,BLAB,ALAB,TLAB,NC2,P,R,S,CONV,NQ,AQUAD,MAXIT,NCENT,ncov,RIDGEIN, &
                        BETA,TAU,SPAR,alpha,thetas,thetavs, maxk,nors)
 
-    FILEOUT2 = "COPY mixREGLS51.OUT+mixREGLS52.OUT " // FILEOUT
-    CALL SYSTEM(FILEOUT2)
-    CALL SYSTEM("DEL mixREGLS51.OUT mixregls52.out")
-    call system("mkdir work")
-    call system("move mixregls5* work")
+#if defined(_WIN32)
+     FILEOUT2 = "COPY mixREGLS51.OUT+mixREGLS52.OUT " // FILEOUT
+     CALL SYSTEM(FILEOUT2)
+     CALL SYSTEM("DEL mixREGLS51.OUT mixregls52.out")
+     call system("mkdir work")
+     call system("move mixregls5* work")
+#else
+     FILEOUT2 = "cat mixREGLS51.OUT mixREGLS52.OUT >> " // FILEOUT
+     CALL SYSTEM(FILEOUT2)
+     CALL SYSTEM("rm mixREGLS51.OUT mixREGLS52.out")
+     call system("mkdir work")
+     call system("mv mixREGLS5* work")
+#endif
+
     if(no2nd .ne. 1) then
         allocate(tempdata(nvar3))
         open(32,file=trim(fileprefix)//'_level2.dat')
@@ -483,8 +492,13 @@ PROGRAM MIXREGLS_subject
             write(1,*) nc2, 1, 1, nreps, 123
         end if
         close(1)
-        
+
+#if defined(_WIN32)
         call system("mix_random")
+#else
+        call system("./mix_random")
+#endif
+
         open(1, file="repeat_mixreg.def")
         write(1,*) trim(fileprefix)//'_level2.dat'
         write(1,*) trim(fileprefix)//'_ebrandom.dat'
@@ -526,8 +540,15 @@ PROGRAM MIXREGLS_subject
             write(1,*) (var2Label(k+I), I=1,Pto)
          END IF
         CLOSE(1)
+        
+#if defined(_WIN32)
         call system("copy repeat_mixreg.def "//trim(fileprefix)//"_repeat_mixreg.def")
         call system("repeat_mixreg")
+#else
+        call system("cp repeat_mixreg.def "//trim(fileprefix)//"_repeat_mixreg.def")
+        call system("./repeat_mixreg")
+#endif
+      
         open(3, file=trim(fileprefix)//'_desc2.out')
         
     write(3,9) head
@@ -598,12 +619,23 @@ PROGRAM MIXREGLS_subject
 
          close(3)
             write(mystr, '(I5)') nreps
+
+#if defined(_WIN32)        
         call system("move mix_random.def work")
         call system("move "//trim(fileprefix)//"_ebvar.dat work")
         CALL SYSTEM("copy "//trim(fileprefix)//"_desc2.out+"//trim(fileprefix) &
                     //"_random_"//trim(adjustl(mystr))//".out "//trim(fileprefix)//"_2.out")
         call system("del "//trim(fileprefix)//"_desc2.out")
         call system("move "//trim(fileprefix)//"_random* work")
+#else
+        CALL SYSTEM("cat "//trim(fileprefix)//"_desc2.out "//trim(fileprefix) &
+                    //"_random_"//trim(adjustl(mystr))//".out >> "//trim(fileprefix)//"_2.out")
+        call system("rm "//trim(fileprefix)//"_desc2.out")
+        call system("mv mix_random.def work")
+        call system("mv "//trim(fileprefix)//"_ebvar.dat work")
+        call system("mv "//trim(fileprefix)//"_random* work")
+#endif
+
     end if
     !deallocate(tempsums,tempdata,tempvector)
 CONTAINS

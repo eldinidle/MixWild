@@ -447,8 +447,12 @@ PROGRAM mixregmls_subject
     write(1,*) (blab(j), j=1,p)
     close(1)
 
+#if defined(_WIN32)
+     CALL SYSTEM("MIXREG")
+#else
+     CALL SYSTEM("./mixreg")
+#endif
 
-    CALL SYSTEM("MIXREG")
     open(unit=1,file="mixreg.lik")
     read(1,*) logl, npar
     close(1)
@@ -497,8 +501,12 @@ PROGRAM mixregmls_subject
     end do
     close(1)
     deallocate(temp3)
-    CALL SYSTEM("DEL mixreg.lik mixreg.est mixreg_temp.dat mixreg.var mixreg.dev mixreg.def temp_*")       
     
+#if defined(_WIN32)
+    CALL SYSTEM("DEL mixreg.lik mixreg.est mixreg_temp.dat mixreg.var mixreg.dev mixreg.def temp_*")    
+#else    
+    CALL SYSTEM("rm mixreg.lik mixreg.est mixreg_temp.dat mixreg.var mixreg.dev mixreg.def temp_*")       
+#endif    
     
     IUN    = 16
     OPEN(UNIT=IUN,FILE="MIXREGMLS3.OUT")
@@ -565,11 +573,19 @@ v = mychol
     CALL mixregmlsEST(IDNI,Y,X,U,W,BLAB,ALAB,TLAB,NC2,P,R,S,CONV,NQ,AQUAD,MAXIT,NCENT,RIDGEIN, &
                        BETA,TAU,SPAR,mychol,thetas,thetavs,snint,ncov,nors,maxk)
 
-    FILEOUT2 = "COPY MIXREGmLS1.OUT+MIXREGmLS3.OUT+MIXREGmLS2.OUT " // FILEOUT
+#if defined(_WIN32)
+     FILEOUT2 = "COPY MIXREGmLS1.OUT+MIXREGmLS3.OUT+MIXREGmLS2.OUT " // FILEOUT
+     CALL SYSTEM(FILEOUT2)
+     CALL SYSTEM("DEL mixregmls1.OUT mixregmls2.OUT mixregmls3.OUT")
+     call system("mkdir work")
+     call system("move mixregmls_.* work")
+#else    
+    FILEOUT2 = "cat MIXREGmLS1.OUT+MIXREGmLS3.OUT MIXREGmLS2.OUT >> " // FILEOUT
     CALL SYSTEM(FILEOUT2)
-    CALL SYSTEM("DEL mixregmls1.OUT mixregmls2.OUT mixregmls3.OUT")
+    CALL SYSTEM("rm mixregmls1.OUT mixregmls2.OUT mixregmls3.OUT")
     call system("mkdir work")
-    call system("move mixregmls_.* work")
+    call system("mv mixregmls_.* work")
+#endif   
 
     if(no2nd .ne. 1) then
         allocate(tempdata(nvar3))
@@ -606,7 +622,12 @@ v = mychol
             write(1,*) nc2, r,1, nreps, 123
         end if
         close(1)
+        
+#if defined(_WIN32)
         call system("mix_random.exe")
+#else
+        call system("./mix_random")
+#endif
         
         open(1, file="repeat_mixreg.def")
         write(1,*) trim(fileprefix)//'_level2.dat'
@@ -649,9 +670,15 @@ v = mychol
             write(1,*) (var2Label(k+I), I=1,Pto)
          END IF
         CLOSE(1)
-        call system("copy repeat_mixreg.def "//trim(fileprefix)//"_repeat_mixreg.def")
-        call system("repeat_mixreg.exe")
         
+#if defined(_WIN32)
+         call system("copy repeat_mixreg.def "//trim(fileprefix)//"_repeat_mixreg.def")
+         call system("repeat_mixreg.exe")
+#else
+        call system("cp repeat_mixreg.def "//trim(fileprefix)//"_repeat_mixreg.def")
+        call system("./repeat_mixreg")
+#endif
+
         open(3, file=trim(fileprefix)//'_desc2.out')
          ALLOCATE(tempVector(nc2))
     200  FORMAT(1x,A16,4F12.4)
@@ -720,12 +747,23 @@ v = mychol
 
          close(3)
             write(mystr, '(I5)') nreps
+
+#if defined(_WIN32)
         call system("move mix_random.def work")
         call system("move "//trim(fileprefix)//"_ebvar.dat work")
         CALL SYSTEM("copy "//trim(fileprefix)//"_desc2.out+"//trim(fileprefix) &
                     //"_random_"//trim(adjustl(mystr))//".out "//trim(fileprefix)//"_2.out")
         call system("del "//trim(fileprefix)//"_desc2.out")
         call system("move "//trim(fileprefix)//"_random* work")
+#else
+        CALL SYSTEM("cat "//trim(fileprefix)//"_desc2.out "//trim(fileprefix) &
+                    //"_random_"//trim(adjustl(mystr))//".out >> "//trim(fileprefix)//"_2.out")
+        call system("rm "//trim(fileprefix)//"_desc2.out")
+        call system("mv "//trim(fileprefix)//"_random* work")
+        call system("mv mix_random.def work")
+        call system("mv "//trim(fileprefix)//"_ebvar.dat work")
+#endif
+
     end if
 
     !deallocate(tempsums,tempdata,tempvector)
