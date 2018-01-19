@@ -1242,7 +1242,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
              write(IUN,'(" Number of level-1 observations for each level-2 cluster")')
              write(IUN,'(1x,13I6)') (IDNI(i,2), i=1,nc2)
 
-        200  FORMAT(1x,A8,4F12.4)
+        200  FORMAT(1x,A16,4F12.4)
 
              WRITE(IUN,*)
              WRITE(IUN,'(" Dependent variable")')
