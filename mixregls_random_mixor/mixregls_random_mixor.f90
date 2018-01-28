@@ -1242,8 +1242,8 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
 
              WRITE(IUN,*)
              WRITE(IUN,'(" Dependent variable")')
-             WRITE(IUN,'("                          mean         min         max     std dev")') 
-             WRITE(IUN,'(" -----------------------------------------------------------------")')
+         WRITE(IUN,'("                                  mean         min         max     std dev")') 
+         WRITE(IUN,'(" -------------------------------------------------------------------------")')
              WRITE(IUN,200) YLABEL,meany,miny,maxy,stdy
              WRITE(IUN,*)
 
@@ -1255,8 +1255,8 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
              end if
              if (pold>0) then
                 WRITE(IUN,'(" Mean model covariates")')
-                WRITE(IUN,'("                          mean         min         max     std dev")') 
-                WRITE(IUN,'(" -----------------------------------------------------------------")')
+         WRITE(IUN,'("                                  mean         min         max     std dev")') 
+         WRITE(IUN,'(" -------------------------------------------------------------------------")')
                 do i=1,p
                    WRITE(IUN,200) BLAB(i),meanx(i),minx(i),maxx(i),stdx(i)
                 end do
@@ -1265,8 +1265,8 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
 
              if (rold>0) then
                 WRITE(IUN,'(" BS variance model covariates")')
-                WRITE(IUN,'("                          mean         min         max     std dev")') 
-                WRITE(IUN,'(" -----------------------------------------------------------------")')
+         WRITE(IUN,'("                                  mean         min         max     std dev")') 
+         WRITE(IUN,'(" -------------------------------------------------------------------------")')
                 do i=1,r
                    WRITE(IUN,200) ALAB(i),meanu(i),minu(i),maxu(i),stdu(i)
                 end do
@@ -1275,8 +1275,8 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
 
              if (sold>0) then
                 WRITE(IUN,'(" WS variance model covariates")')
-                WRITE(IUN,'("                          mean         min         max     std dev")') 
-                WRITE(IUN,'(" -----------------------------------------------------------------")')
+         WRITE(IUN,'("                                  mean         min         max     std dev")') 
+         WRITE(IUN,'(" -------------------------------------------------------------------------")')
                 do i=1,s
                    WRITE(IUN,200) TLAB(i),meanw(i),minw(i),maxw(i),stdw(i)
                 end do
@@ -1887,7 +1887,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                      1X,"Schwarz's Bayesian Criterion   = ",F12.3,/)
                 WRITE(IUN,57)
  57 FORMAT(/,'Variable',21x,'    Estimate',4X,'AsymStdError',4x, &
-          '     z-value',4X,'     p-value',/,'----------------',4x,  &
+          '     z-value',4X,'     p-value',/,'-------------------------',4x,  &
           '------------',4X,'------------',4X,'------------',4X,'------------')
             
                  PVAL=0.0D0
@@ -2010,13 +2010,13 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
             tauhat = exp(spar(1))
             tauhatlow = exp(spar(1)-myz*se(l2))
             tauhatup = exp(spar(1)+myz*se(l2))
-            WRITE(IUN,804)"Location Effect         ",tauhat, tauhatlow, tauhatup
+            WRITE(IUN,804)"Location Effect          ",tauhat, tauhatlow, tauhatup
             if(ncov > 1) then
                  l2 = p+r+s+2
                 tauhat = exp(spar(2))
                 tauhatlow = exp(spar(2)-myz*se(l2))
                 tauhatup = exp(spar(2)+myz*se(l2))
-                WRITE(IUN,804)"Quad Location           ",tauhat, tauhatlow, tauhatup
+                WRITE(IUN,804)"Quad Location            ",tauhat, tauhatlow, tauhatup
             end if
         end if
         if(nors .ne. 1) then
@@ -2026,7 +2026,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
 	        tauhat = exp(spar(ns))
 	        tauhatlow = exp(spar(ns)-myz*se(l2))
 	        tauhatup = exp(spar(ns)+myz*se(l2))
-	        WRITE(IUN,804)'Std Dev                 ',tauhat, tauhatlow, tauhatup
+	        WRITE(IUN,804)'Std Dev                  ',tauhat, tauhatlow, tauhatup
 		end if         
            
          CLOSE(IUN)
