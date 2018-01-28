@@ -8,11 +8,11 @@ PROGRAM repeat_mixor
     REAL(KIND=8),ALLOCATABLE:: tempsums(:,:),temp3(:),&
                                 betas(:,:),meanbetas(:),totalvarhats(:),varbetas(:),&
                                thetatemp(:),thetas(:,:),tempdata(:),liks(:),dev(:)
-    CHARACTER(LEN=16),ALLOCATABLE :: var2label(:)
-    CHARACTER(LEN=24),ALLOCATABLE :: intlabel(:)
+    CHARACTER(LEN=32),ALLOCATABLE :: var2label(:)
+    CHARACTER(LEN=25),ALLOCATABLE :: intlabel(:)
     CHARACTER(LEN=100) :: FILEDAT,fileeb,filetempdat,FILEprefix,temp80
     character(len=160) :: fileout
-    character(len=24) :: mystr
+    character(len=32) :: mystr
     logical :: fp_equal
 
     OPEN(1, FILE='repeat_mixor.def')
@@ -284,8 +284,8 @@ PROGRAM repeat_mixor
          1X,"Akaike's Information Criterion = ",F12.3,/, &
          1X,"Schwarz's Bayesian Criterion   = ",F12.3,/)
             WRITE(2,57)
-            57 FORMAT(/,'Variable',12x,'    Estimate',4X,'AsymStdError',4x, &
-                      '     z-value',4X,'     p-value',/,'----------------',4x,  &
+            57 FORMAT(/,'Variable',21x,'    Estimate',4X,'AsymStdError',4x, &
+                      '     z-value',4X,'     p-value',/,'-------------------------',4x,  &
                       '------------',4X,'------------',4X,'------------',4X,'------------')
     varbetas = 0
     totalvarhats(:) = totalvarhats(:) / numgood
@@ -297,7 +297,7 @@ PROGRAM repeat_mixor
         varbetas(j) = varbetas(j) / (numgood - 1)
         ZVAL = meanbetas(j)/sqrt(totalvarhats(j)+varbetas(j))
         PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL)))
-        write(*,'(A16,4(4x,F10.4))') intlabel(j+1), meanbetas(j), sqrt(totalvarhats(j)+varbetas(j)),zval,pval
+        write(*,'(A25,4(4x,F10.4))') intlabel(j+1), meanbetas(j), sqrt(totalvarhats(j)+varbetas(j)),zval,pval
         write(2,804) intlabel(j+1), meanbetas(j), sqrt(totalvarhats(j)+varbetas(j)),zval,pval
     end do
     
