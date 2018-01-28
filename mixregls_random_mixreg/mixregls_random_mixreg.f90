@@ -614,7 +614,7 @@ PROGRAM MIXREGLS_subject
             tempVector(:)=(thetas(:,1)*thetas(:,2)-meany)**2
             TEMP=SUM(tempVector)/DBLE(nc2-1)
             stdx=DSQRT(TEMP)
-            WRITE(3,200) "Locat_1*Scale     ",meany,miny,maxy,stdy
+            WRITE(3,200) "Locat_1*Scale              ",meany,miny,maxy,stdy
         end if
 
          close(3)
