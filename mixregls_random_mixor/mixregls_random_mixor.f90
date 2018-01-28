@@ -597,7 +597,7 @@ PROGRAM MIXREGLS_subject
             tempVector(:)=(thetas(:,j)-meany)**2
             TEMP=SUM(tempVector)/DBLE(nc2-1)
             stdy=DSQRT(TEMP)
-            write(mystr, '(A6, I1, A17)') "Locat_",j,"                 "
+            write(mystr, '(A6, I1, A25)') "Locat_",j,"                 "
             if(j .eq. 2 .and. nors .ne. 1) mystr = "Scale"
             if(j .eq. 1 .or. (j .eq. 2 .and. nors .ne. 1)) WRITE(3,200) mystr,meany,miny,maxy,stdy
         end do
@@ -609,7 +609,7 @@ PROGRAM MIXREGLS_subject
             tempVector(:)=(thetas(:,1)*thetas(:,2)-meany)**2
             TEMP=SUM(tempVector)/DBLE(nc2-1)
             stdx=DSQRT(TEMP)
-            WRITE(3,200) "Locat_1*Scale     ",meany,miny,maxy,stdy
+            WRITE(3,200) "Locat_1*Scale              ",meany,miny,maxy,stdy
         end if
 
          close(3)
@@ -1933,7 +1933,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                     if(spar(ncov+1) < 0) spar(ncov+1)=abs(spar(ncov+1))
                     ZVAL = SPAR(ncov+1)/SE(L2)
                     PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL),0))
-                    WRITE(IUN,804)'Std Dev         ',SPAR(ncov+1),SE(L2),ZVAL,PVAL
+                    WRITE(IUN,804)'Std Dev                  ',SPAR(ncov+1),SE(L2),ZVAL,PVAL
                  end if
                  IF (NS>0) THEN
                     if(ncov >= 1) then
@@ -1941,14 +1941,14 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                         ZVAL = SPAR(1)/SE(L2)
                         PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL),0))
                         WRITE(IUN,'("Random location (mean) effect on WS variance")')
-                        WRITE(IUN,804)'Loc  Eff        ',SPAR(1),SE(L2),ZVAL,PVAL
+                        WRITE(IUN,804)'Loc  Eff                 ',SPAR(1),SE(L2),ZVAL,PVAL
                     end if
                     if(ncov==2) then
                         WRITE(IUN,'("Random quadratic location (mean) effects on WS variance")')
                         L2=P+R+S+2
                         ZVAL = SPAR(2)/SE(L2)
                         PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL),0))
-                        WRITE(IUN,804)'Quad Loc        ',SPAR(2),SE(L2),ZVAL,PVAL
+                        WRITE(IUN,804)'Quad Loc                 ',SPAR(2),SE(L2),ZVAL,PVAL
                     end if
                 end if
              804 FORMAT(A25,4(4x,F12.5))
@@ -2010,13 +2010,13 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
             tauhat = exp(spar(1))
             tauhatlow = exp(spar(1)-myz*se(l2))
             tauhatup = exp(spar(1)+myz*se(l2))
-            WRITE(IUN,804)"Location Effect ",tauhat, tauhatlow, tauhatup
+            WRITE(IUN,804)"Location Effect         ",tauhat, tauhatlow, tauhatup
             if(ncov > 1) then
                  l2 = p+r+s+2
                 tauhat = exp(spar(2))
                 tauhatlow = exp(spar(2)-myz*se(l2))
                 tauhatup = exp(spar(2)+myz*se(l2))
-                WRITE(IUN,804)"Quad Location   ",tauhat, tauhatlow, tauhatup
+                WRITE(IUN,804)"Quad Location           ",tauhat, tauhatlow, tauhatup
             end if
         end if
         if(nors .ne. 1) then
