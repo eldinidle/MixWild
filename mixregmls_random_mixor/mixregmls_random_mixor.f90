@@ -1399,7 +1399,8 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
      end if
         if(discard0 .ne. 0) WRITE(IUN,508)num0
         508 FORMAT(//,1x,'==> The number of level 2 observations removed because of non-varying responses =', I6)
-        if(discard0 .ne. 0 .and. num0 > 0) write(IUN,*) '(see '//trim(fileprefix)//'_removed.dat for information about those clusters)'
+        if(discard0 .ne. 0 .and. num0 > 0) 
+            write(IUN,*) '(see '//trim(fileprefix)//'_removed.dat for information about those clusters)'
 
         CLOSE(IUN)
     END SUBROUTINE PRINTDESC
