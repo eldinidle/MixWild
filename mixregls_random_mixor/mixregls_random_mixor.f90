@@ -1194,8 +1194,8 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
     SUBROUTINE PRINTDESC(HEAD,FILEDAT,FILEprefix,CONV,NQ,AQUAD,MAXIT,NOBS,NC2,IDNI,YLABEL,meany,miny,maxy,stdy, &
                NCENT,P,R,S,BLAB,meanx,minx,maxx,stdx,ALAB,meanu,minu,maxu,stdu,TLAB,meanw,minw,maxw,stdw,num0)
 
-        CHARACTER(LEN=16),INTENT(IN):: YLABEL
-        CHARACTER(LEN=16),INTENT(IN),dimension(:):: BLAB,ALAB,TLAB
+        CHARACTER(LEN=32),INTENT(IN):: YLABEL
+        CHARACTER(LEN=32),INTENT(IN),dimension(:):: BLAB,ALAB,TLAB
         CHARACTER(LEN=4),INTENT(IN),DIMENSION(:):: HEAD
         CHARACTER(LEN=80),INTENT(IN):: FILEDAT, FILEprefix
         INTEGER,INTENT(IN)::NQ,AQUAD,MAXIT,NOBS,NC2,NCENT,P,R,S,num0
@@ -1317,7 +1317,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                                    mytheta(:), myweights(:),mypoints(:,:), myweights0(:),&
                                    mypoints0(:,:),pointsR0(:,:),weightsR0(:),pointsR1(:,:),weightsR1(:),&
                                    vaug(:)
-        CHARACTER(LEN=16),INTENT(IN),DIMENSION(:):: BLAB(:),ALAB(:),TLAB(:)
+        CHARACTER(LEN=32),INTENT(IN),DIMENSION(:):: BLAB(:),ALAB(:),TLAB(:)
 
             ! parameters
         PI = 3.141592653589793238462643d0
