@@ -27,15 +27,15 @@ PROGRAM MIXREGmLS_subject
                                BETA(:),TAU(:),SPAR(:), tempsums(:,:),&
                                IDMV(:,:),mychol(:),se(:),temp3(:),v(:),&
                                thetas(:,:),thetavs(:,:),tempdata(:),tempVector(:)
-    character(len=12),allocatable::varlabel(:)
-    CHARACTER(LEN=16) :: YLABEL, templabel
-    CHARACTER(LEN=16),ALLOCATABLE :: BLAB(:),ALAB(:),tlab(:),var2label(:)
-    CHARACTER(LEN=24),ALLOCATABLE :: intlabel(:)
+    character(len=22),allocatable::varlabel(:)
+    CHARACTER(LEN=32) :: YLABEL, templabel
+    CHARACTER(LEN=32),ALLOCATABLE :: BLAB(:),ALAB(:),tlab(:),var2label(:)
+    CHARACTER(LEN=32),ALLOCATABLE :: intlabel(:)
     CHARACTER(LEN=4) :: HEAD(36)
     CHARACTER(LEN=80) :: FILEDAT, FILEprefix
     character(len=86) :: fileout
     CHARACTER(LEN=160) :: FILEOUT2, tempstr
-    character(len=24) :: mystr
+    character(len=32) :: mystr
     logical :: fp_equal,longdef
 
     OPEN(1, FILE='mixregmls_random_mixor.def')
@@ -533,8 +533,8 @@ PROGRAM MIXREGmLS_subject
          1X,"Akaike's Information Criterion = ",F12.3,/, &
          1X,"Schwarz's Bayesian Criterion   = ",F12.3,/)
     WRITE(IUN,57)
- 57 FORMAT(/,'Variable',12x,'    Estimate',4X,'AsymStdError',4x, &
-          '     z-value',4X,'     p-value',/,'----------------',4x,  &
+ 57 FORMAT(/,'Variable',21x,'    Estimate',4X,'AsymStdError',4x, &
+          '     z-value',4X,'     p-value',/,'-------------------------',4x,  &
           '------------',4X,'------------',4X,'------------',4X,'------------')
 
      PVAL=0.0D0
@@ -701,15 +701,15 @@ v = mychol
          temp=SUM(tempVector)/DBLE(nc2-1)
          stdy=DSQRT(TEMP)
          WRITE(3,'(" Dependent variable")')
-         WRITE(3,'("                         mean         min         max     std dev")') 
-         WRITE(3,'(" ----------------------------------------------------------------")')
+         WRITE(3,'("                                  mean         min         max     std dev")') 
+         WRITE(3,'(" -------------------------------------------------------------------------")')
          WRITE(3,200) var2Label(1),meany,miny,maxy,stdy
          WRITE(3,*)
 
         write(3,*)
          WRITE(3,'(" Independent variables")')
-         WRITE(3,'("                         mean         min         max     std dev")') 
-         WRITE(3,'(" ----------------------------------------------------------------")')
+         WRITE(3,'("                                  mean         min         max     std dev")') 
+         WRITE(3,'(" -------------------------------------------------------------------------")')
 
         do i=1,pfixed
             meany=sum(tempsums(1:nc2,1+i))/dble(nc2)
@@ -724,8 +724,8 @@ v = mychol
          WRITE(3,*)
          WRITE(3,*)
          WRITE(3,'(" Random Location and Scale EB mean estimates")')
-         WRITE(3,'("                         mean         min         max     std dev")') 
-         WRITE(3,'(" ----------------------------------------------------------------")')
+         WRITE(3,'("                                  mean         min         max     std dev")') 
+         WRITE(3,'(" -------------------------------------------------------------------------")')
         do j=1,R+1-nors
             meany=sum(thetas(:,j))/dble(nc2)
             miny=minval(thetas(:,j))
@@ -733,7 +733,7 @@ v = mychol
             tempVector(:)=(thetas(:,j)-meany)**2
             TEMP=SUM(tempVector)/DBLE(nc2-1)
             stdy=DSQRT(TEMP)
-            write(mystr, '(A6, I1, A17)') "Locat_",j,"                 "
+            write(mystr, '(A6, I1, A25)') "Locat_",j,"                 "
             if(j .eq. R+1) mystr = "Scale"
             if(j .le. R .or. (j .eq. R+1 .and. nors .ne. 1)) WRITE(3,200) mystr,meany,miny,maxy,stdy
         end do
@@ -744,7 +744,7 @@ v = mychol
             tempVector(:)=(thetas(:,1)*thetas(:,R+1)-meany)**2
             TEMP=SUM(tempVector)/DBLE(nc2-1)
             stdx=DSQRT(TEMP)
-            WRITE(3,200) "Locat_1*Scale     ",meany,miny,maxy,stdy
+            WRITE(3,200) "Locat_1*Scale              ",meany,miny,maxy,stdy
         end if
          WRITE(3,*)
          WRITE(3,*)
@@ -1310,8 +1310,8 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
     SUBROUTINE PRINTDESC(HEAD,FILEDAT,FILEprefix,CONV,NQ,AQUAD,MAXIT,NOBS,NC2,IDNI,YLABEL,meany,miny,maxy,stdy, &
             NCENT,P,R,S,BLAB,meanx,minx,maxx,stdx,ALAB,meanu,minu,maxu,stdu,TLAB,meanw,minw,maxw,stdw,num0)
 
-        CHARACTER(LEN=16),INTENT(IN):: YLABEL
-        CHARACTER(LEN=16),INTENT(IN),dimension(:):: BLAB,ALAB,TLAB
+        CHARACTER(LEN=32),INTENT(IN):: YLABEL
+        CHARACTER(LEN=32),INTENT(IN),dimension(:):: BLAB,ALAB,TLAB
         CHARACTER(LEN=4),INTENT(IN),DIMENSION(:):: HEAD
         CHARACTER(LEN=80),INTENT(IN):: FILEDAT, FILEprefix
         INTEGER,INTENT(IN)::NQ,AQUAD,MAXIT,NOBS,NC2,NCENT,P,R,S,num0
@@ -1353,12 +1353,12 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
      write(IUN,'(" Number of level-1 observations for each level-2 cluster")')
      write(IUN,'(1x,13I6)') (IDNI(i,2),i=1,nc2)
 
-200  FORMAT(1x,A16,4F12.4)
+200  FORMAT(1x,A25,4F12.4)
 
      WRITE(IUN,*)
      WRITE(IUN,'(" Dependent variable")')
-     WRITE(IUN,'("                         mean         min         max     std dev")') 
-     WRITE(IUN,'(" ----------------------------------------------------------------")')
+         WRITE(IUN,'("                                  mean         min         max     std dev")') 
+         WRITE(IUN,'(" -------------------------------------------------------------------------")')
      WRITE(IUN,200) YLABEL,meany,miny,maxy,stdy
      WRITE(IUN,*)
 
@@ -1370,8 +1370,8 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
      end if
      if (p>0) then
         WRITE(IUN,'(" Mean model covariates")')
-        WRITE(IUN,'("                         mean         min         max     std dev")') 
-        WRITE(IUN,'(" ----------------------------------------------------------------")')
+         WRITE(IUN,'("                                  mean         min         max     std dev")') 
+         WRITE(IUN,'(" -------------------------------------------------------------------------")')
         do i=1,p
            WRITE(IUN,200) BLAB(i),meanx(i),minx(i),maxx(i),stdx(i)
         end do
@@ -1380,8 +1380,8 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
 
      if (r>0) then
         WRITE(IUN,'(" BS variance variables")')
-        WRITE(IUN,'("                         mean         min         max     std dev")') 
-        WRITE(IUN,'(" ----------------------------------------------------------------")')
+         WRITE(IUN,'("                                  mean         min         max     std dev")') 
+         WRITE(IUN,'(" -------------------------------------------------------------------------")')
         do i=1,r
            WRITE(IUN,200) ALAB(i),meanu(i),minu(i),maxu(i),stdu(i)
         end do
@@ -1390,8 +1390,8 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
 
      if (s>0) then
         WRITE(IUN,'(" WS variance model covariates")')
-        WRITE(IUN,'("                         mean         min         max     std dev")') 
-        WRITE(IUN,'(" ----------------------------------------------------------------")')
+         WRITE(IUN,'("                                  mean         min         max     std dev")') 
+         WRITE(IUN,'(" -------------------------------------------------------------------------")')
         do i=1,s
            WRITE(IUN,200) TLAB(i),meanw(i),minw(i),maxw(i),stdw(i)
         end do
@@ -1399,7 +1399,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
      end if
         if(discard0 .ne. 0) WRITE(IUN,508)num0
         508 FORMAT(//,1x,'==> The number of level 2 observations removed because of non-varying responses =', I6)
-        if(discard0 .ne. 0) write(IUN,*) '(see '//trim(fileprefix)//'_removed.dat for information about those clusters)'
+        if(discard0 .ne. 0 .and. num0 > 0) write(IUN,*) '(see '//trim(fileprefix)//'_removed.dat for information about those clusters)'
 
         CLOSE(IUN)
     END SUBROUTINE PRINTDESC
@@ -1435,7 +1435,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                                    mypoints0(:,:),pointsR0(:,:),weightsR0(:),pointsR1(:,:),weightsR1(:),&
                                    cholTheta(:),uth(:),uthfull(:),temploc(:),&
                                    sstar(:), sstar2(:), work(:), sstar2t(:), sigma(:), asstar2(:), adjVar(:), asstar2t(:)
-        CHARACTER(LEN=16),INTENT(IN),DIMENSION(:):: BLAB(:),ALAB(:),TLAB(:)
+        CHARACTER(LEN=32),INTENT(IN),DIMENSION(:):: BLAB(:),ALAB(:),TLAB(:)
 
             ! parameters
         PI = 3.141592653589793238462643d0
@@ -2080,9 +2080,9 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                      1X,"Akaike's Information Criterion = ",F12.3,/, &
                      1X,"Schwarz's Bayesian Criterion   = ",F12.3,/)
             WRITE(IUN,57)
-            57 FORMAT(/,'Variable',12x,'    Estimate',4X,'AsymStdError',4x, &
-                      '     z-value',4X,'     p-value',/,'----------------',4x,  &
-                      '------------',4X,'------------',4X,'------------',4X,'------------')
+ 57 FORMAT(/,'Variable',21x,'    Estimate',4X,'AsymStdError',4x, &
+          '     z-value',4X,'     p-value',/,'-------------------------',4x,  &
+          '------------',4X,'------------',4X,'------------',4X,'------------')
 
              PVAL=0.0D0
              ZVAL=0.0D0
@@ -2175,12 +2175,12 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
      write(iun,*)
      write(iun,*)
      write(iun,*)
-808 FORMAT(A16,3(4x,A12))
+808 FORMAT(A25,3(4x,A12))
      WRITE(IUN,'("WS variance ratios and 95% CIs")')
      write(iun,'("------------------------------")')
      write(iun,*)
-    WRITE(IUN,808) 'Variable        ','Ratio','Lower','Upper'
-    write(iun,808)'---------------------','------------------','------------','------------'
+    WRITE(IUN,808) 'Variable                 ','Ratio','Lower','Upper'
+    write(iun,808) '------------------------------','------------------','------------','------------'
          WRITE(IUN,'("TAU (WS variance parameters: log-linear model)")')
          myz = 1.959964
      DO k=1,S
@@ -2206,7 +2206,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
             tauhat = exp(spar(ns))
             tauhatlow = exp(spar(ns)-myz*se(l2))
             tauhatup = exp(spar(ns)+myz*se(l2))
-            WRITE(IUN,804)'Std Dev         ',tauhat, tauhatlow, tauhatup
+            WRITE(IUN,804)'Std Dev                  ',tauhat, tauhatlow, tauhatup
     end if            
          CLOSE(IUN)
          CLOSE(IUNS)
