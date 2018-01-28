@@ -1946,7 +1946,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                     if(spar(ncov+1) < 0) spar(ncov+1)=abs(spar(ncov+1))
                     ZVAL = SPAR(ncov+1)/SE(L2)
                     PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL),0))
-                    WRITE(IUN,804)'Std Dev         ',SPAR(ncov+1),SE(L2),ZVAL,PVAL
+                    WRITE(IUN,804)'Std Dev                  ',SPAR(ncov+1),SE(L2),ZVAL,PVAL
                  end if
                  IF (NS>0) THEN
                     if(ncov >= 1) then
@@ -1954,14 +1954,14 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                         ZVAL = SPAR(1)/SE(L2)
                         PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL),0))
                         WRITE(IUN,'("Random location (mean) effect on WS variance")')
-                        WRITE(IUN,804)'Loc  Eff        ',SPAR(1),SE(L2),ZVAL,PVAL
+                        WRITE(IUN,804)'Loc  Eff                 ',SPAR(1),SE(L2),ZVAL,PVAL
                     end if
                     if(ncov==2) then
                         WRITE(IUN,'("Random quadratic location (mean) effects on WS variance")')
                         L2=P+R+S+2
                         ZVAL = SPAR(2)/SE(L2)
                         PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL),0))
-                        WRITE(IUN,804)'Quad Loc        ',SPAR(2),SE(L2),ZVAL,PVAL
+                        WRITE(IUN,804)'Quad Loc                 ',SPAR(2),SE(L2),ZVAL,PVAL
                     end if
                 end if
              804 FORMAT(A25,4(4x,F12.5))
@@ -1990,8 +1990,8 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
      WRITE(IUN,'("BS variance ratios and 95% CIs")')
      write(iun,'("------------------------------")')
      write(iun,*)
-    WRITE(IUN,808) 'Variable        ','Ratio','Lower','Upper'
-    write(iun,808)'---------------------','------------------','------------','------------'
+    WRITE(IUN,808) 'Variable                 ','Ratio','Lower','Upper'
+    write(iun,808) '------------------------------','------------------','------------','------------'
          WRITE(IUN,'("ALPHA (BS variance parameters: log-linear model)")')
      DO L=1,R
         L2 = P+L
