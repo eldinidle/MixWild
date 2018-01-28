@@ -2023,13 +2023,13 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
             tauhat = exp(spar(1))
             tauhatlow = exp(spar(1)-myz*se(l2))
             tauhatup = exp(spar(1)+myz*se(l2))
-            WRITE(IUN,804)"Location Effect ",tauhat, tauhatlow, tauhatup
+            WRITE(IUN,804) "Location Effect          ",tauhat, tauhatlow, tauhatup
             if(ncov > 1) then
                  l2 = p+r+s+2
                 tauhat = exp(spar(2))
                 tauhatlow = exp(spar(2)-myz*se(l2))
                 tauhatup = exp(spar(2)+myz*se(l2))
-                WRITE(IUN,804)"Quad Location   ",tauhat, tauhatlow, tauhatup
+                WRITE(IUN,804) "Quad Location            ",tauhat, tauhatlow, tauhatup
             end if
         end if
     write(iun,*)
@@ -2038,7 +2038,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
         tauhat = exp(spar(ns))
         tauhatlow = exp(spar(ns)-myz*se(l2))
         tauhatup = exp(spar(ns)+myz*se(l2))
-        WRITE(IUN,804)'Std Dev                 ',tauhat, tauhatlow, tauhatup
+        WRITE(IUN,804)'Std Dev                  ',tauhat, tauhatlow, tauhatup
          
            
          CLOSE(IUN)
