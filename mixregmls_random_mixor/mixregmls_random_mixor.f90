@@ -2114,8 +2114,8 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
         end do
      END DO
 
- 804 FORMAT(A16,4(4x,F12.5))
- 805 FORMAT(A10,I0,I0,4X,4(4x,F12.5))
+ 804 FORMAT(A25,4(4x,F12.5))
+ 805 FORMAT(A10,I0,I0,13X,4(4x,F12.5))
     write(iun,*)
       IF (NCENT==1 .AND. S>1) THEN 
          WRITE(IUN,'("STANDARDIZED TAU (WS variance parameters: log-linear model)")')
