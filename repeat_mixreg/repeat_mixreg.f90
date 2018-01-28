@@ -8,11 +8,11 @@ PROGRAM repeat_mixreg
     REAL(KIND=8),ALLOCATABLE:: tempsums(:,:),temp3(:),&
                                 betas(:,:),meanbetas(:),totalvarhats(:),varbetas(:),&
                                thetatemp(:),thetas(:,:),tempdata(:),liks(:)
-    CHARACTER(LEN=16),ALLOCATABLE :: var2label(:)
-    CHARACTER(LEN=24),ALLOCATABLE :: intlabel(:)
+    CHARACTER(LEN=32),ALLOCATABLE :: var2label(:)
+    CHARACTER(LEN=25),ALLOCATABLE :: intlabel(:)
     CHARACTER(LEN=80) :: FILEDAT,fileeb,filetempdat,FILEprefix,temp80
     character(len=86) :: fileout
-    character(len=24) :: mystr
+    character(len=32) :: mystr
     logical :: fp_equal
 
     OPEN(1, FILE='repeat_mixreg.def')
@@ -127,20 +127,20 @@ PROGRAM repeat_mixreg
         intlabel(2) = "Intercept             "
         intlabel(3:pfixed+3) = var2label(2:1+pfixed)
         do j=1,R
-            write(mystr, '(A6, I1, A17)') "Locat_",j,"                 "
+            write(mystr, '(A6, I1, A25)') "Locat_",j,"                 "
             intLabel(1+Pfixed+1+(Ptheta+1)*(j-1)+1) = mystr
             do i=1,pTheta
-                write(mystr, '(A6, I1, A17)') "Locat_",j,"*"//var2label(1+pfixed+i)
+                write(mystr, '(A6, I1, A25)') "Locat_",j,"*"//var2label(1+pfixed+i)
                 intlabel(1+pfixed+1+(Ptheta+1)*(j-1)+1+i) = mystr
             end do
         end do
         intlabel(1+pfixed+1+(1+Ptheta)*R+1) = "Scale                 "
         if(pOmega > 0) intlabel(1+pfixed+1+(1+Ptheta)*R+2:1+pfixed+1+(1+Ptheta)*R+1+pomega) = &
             "Scale*"//var2label(1+pfixed+ptheta+1:1+pfixed+ptheta+pomega)
-        if(pTO >= 0) intlabel(1+pfixed+1+(1+Ptheta)*R+1+pomega+1) = "Locat_1*Scale           "
+        if(pTO >= 0) intlabel(1+pfixed+1+(1+Ptheta)*R+1+pomega+1) = "Locat_1*Scale                    "
         if(pTO >= 1) intlabel(1+pfixed+1+(1+Ptheta)*R+1+pomega+2:1+pfixed+1+(1+Ptheta)*R+1+pomega+pto) = &
             "L*S*"//var2label(1+pfixed+ptheta+pomega+1:1+pfixed+ptheta+pomega+pto)
-        intLabel(nvar3+1) = "Resid.Variance"
+        intLabel(nvar3+1) = "Residual.Variance"
         
         filetempdat = trim(fileprefix) // "_.dat"
         OPEN(1,FILE="mixreg.def")
@@ -236,8 +236,6 @@ PROGRAM repeat_mixreg
         CALL SYSTEM("./mixreg > temp_")
 #endif
 
-        call sleep(1)
-        
         open(n*5+2, file="mixreg.est")
         do j=1,nvar3 !nvar-1 fixed effects plus the residual variance
             read(n*5+2,*) mystr, betas(n,j)
@@ -279,8 +277,8 @@ PROGRAM repeat_mixreg
          1X,"Akaike's Information Criterion = ",F12.3,/, &
          1X,"Schwarz's Bayesian Criterion   = ",F12.3,/)
             WRITE(2,57)
-            57 FORMAT(/,'Variable',12x,'    Estimate',4X,'AsymStdError',4x, &
-                      '     z-value',4X,'     p-value',/,'----------------',4x,  &
+            57 FORMAT(/,'Variable',21x,'    Estimate',4X,'AsymStdError',4x, &
+                      '     z-value',4X,'     p-value',/,'-------------------------',4x,  &
                       '------------',4X,'------------',4X,'------------',4X,'------------')
     varbetas = 0
     totalvarhats(:) = totalvarhats(:) / nreps
@@ -297,7 +295,7 @@ PROGRAM repeat_mixreg
         write(2,804) intlabel(j+1), meanbetas(j), sqrt(totalvarhats(j)+varbetas(j)),zval,pval
     end do
     
-     804 FORMAT(A16,4(4x,F12.5))
+     804 FORMAT(A25,4(4x,F12.5))
      call system("mkdir work")
      
 #if defined(_WIN32)
