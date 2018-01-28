@@ -565,10 +565,10 @@ PROGRAM MIXREGmLS_subject
     ZVAL = temp/SE(1+p+rr)
     PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL),0))
     write(iun,*)
-    WRITE(IUN,804)'Error variance  ',temp,SE(1+p+rr),ZVAL,PVAL
+    WRITE(IUN,804)'Error variance           ',temp,SE(1+p+rr),ZVAL,PVAL
 
- 804 FORMAT(A16,4(4x,F12.5))
- 805 FORMAT(A10,I0,I0,4X,4(4x,F12.5))
+ 804 FORMAT(A25,4(4x,F12.5))
+ 805 FORMAT(A10,I0,I0,13X,4(4x,F12.5))
 v = mychol
     call CHSKY(v,mychol,r,myio)
     ! estimation subroutine 
@@ -685,7 +685,7 @@ v = mychol
         
         open(3, file=trim(fileprefix)//'_desc2.out')
          ALLOCATE(tempVector(nc2))
-    200  FORMAT(1x,A16,4F12.4)
+    200  FORMAT(1x,A25,4F12.4)
     write(3,9) head
     write(3,*)
     write(3,*) "Level 2 obervations =",nc2
