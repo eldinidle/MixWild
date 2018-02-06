@@ -140,7 +140,7 @@ PROGRAM repeat_mixreg
         if(pTO >= 0) intlabel(1+pfixed+1+(1+Ptheta)*R+1+pomega+1) = "Locat_1*Scale                    "
         if(pTO >= 1) intlabel(1+pfixed+1+(1+Ptheta)*R+1+pomega+2:1+pfixed+1+(1+Ptheta)*R+1+pomega+pto) = &
             "L*S*"//var2label(1+pfixed+ptheta+pomega+1:1+pfixed+ptheta+pomega+pto)
-        intLabel(nvar3+1) = "Residual.Variance"
+        intLabel(nvar3+1) = "Residual_Variance"
         
         filetempdat = trim(fileprefix) // "_.dat"
         OPEN(1,FILE="mixreg.def")
@@ -292,6 +292,7 @@ PROGRAM repeat_mixreg
         ZVAL = meanbetas(j)/sqrt(totalvarhats(j)+varbetas(j))
         PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL)))
         !write(*,'(A16,4(4x,F10.4))') intlabel(j+1), meanbetas(j), sqrt(totalvarhats(j)+varbetas(j)),zval,pval
+        if(j .eq. nvar3) write(2,*)
         write(2,804) intlabel(j+1), meanbetas(j), sqrt(totalvarhats(j)+varbetas(j)),zval,pval
     end do
     
