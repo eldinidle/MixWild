@@ -1,3 +1,6 @@
+echo 'Creating base folder'
+mkdir "Windows Binaries"
+echo 'Compiling and Archiving'
 echo 'mixreg'
 cd mixreg
 del libmix.a
@@ -12,16 +15,19 @@ move *.mod modules
 ar -qs libmix.a matcal1.o matcal2.o mixlib.o rrmset.o mixregc.o dllstub.o
 gfortran libmix.a -Jmodules -LC:\MinGW\lib -static-libgcc -static-libgfortran -m32 -D _WIN32 -cpp -o mixreg
 cd ..
+move "mixreg\mixreg.exe" "Windows Binaries"
 echo 'repeat_mixreg'
 cd repeat_mixreg 
 gfortran -c -o repeat_mixreg.o -g -static -m32 -D _WIN32 -cpp repeat_mixreg.f90
 gfortran repeat_mixreg.o  -LC:\MinGW\lib  -static-libgcc -static-libgfortran  -m32 -D _WIN32 -cpp -o repeat_mixreg
 cd ..
+move repeat_mixreg\repeat_mixreg.exe "Windows Binaries"
 echo 'mix_random'
 cd mix_random
 gfortran -c -o mix_random.o -g -static -m32 -D _WIN32 -cpp mix_random.f90
 gfortran mix_random.o  -LC:\MinGW\lib  -static-libgcc -static-libgfortran  -m32 -D _WIN32 -cpp -o mix_random
 cd ..
+move mix_random\mix_random.exe "Windows Binaries"
 echo 'mixregls_random_mixreg'
 cd mixregls_random_mixreg 
 del libmix.a 
@@ -31,6 +37,7 @@ gfortran -c -o sstar.o -g -static -m32 -D _WIN32 -cpp sstar.f90
 ar -qs libmix.a hermite_rule.o sstar.o mixregls_random_mixreg.o 
 gfortran libmix.a -LC:\MinGW\lib -static-libgcc -static-libgfortran -m32 -D _WIN32 -cpp -o mixregls_random_mixreg
 cd ..
+move mixregls_random_mixreg\mixregls_random_mixreg.exe "Windows Binaries"
 echo 'mixregls_random_mixor'
 cd mixregls_random_mixor 
 del libmix.a 
@@ -40,11 +47,13 @@ gfortran -c -o mixregls_random_mixor.o -g -static -m32 -D _WIN32 -cpp mixregls_r
 ar -qs libmix.a hermite_rule.o sstar.o mixregls_random_mixor.o 
 gfortran libmix.a -LC:\MinGW\lib -static-libgcc -static-libgfortran -m32 -D _WIN32 -cpp -o mixregls_random_mixor
 cd..
+move mixregls_random_mixor\mixregls_random_mixor.exe "Windows Binaries"
 echo 'repeat_mixor'
 cd repeat_mixor 
 gfortran -c -o repeat_mixor.o -g -static -m32 -D _WIN32 -cpp repeat_mixor.f90
 gfortran repeat_mixor.o  -LC:\MinGW\lib  -static-libgcc -static-libgfortran  -m32 -D _WIN32 -cpp -o repeat_mixor
 cd ..
+move repeat_mixor\repeat_mixor.exe "Windows Binaries"
 echo 'mixregmls_random_mixreg'
 cd mixregmls_random_mixreg 
 del libmix.a 
@@ -54,7 +63,8 @@ gfortran -c -o sstar.o -g -static -m32 -D _WIN32 -cpp sstar.f90
 ar -qs libmix.a hermite_rule.o sstar.o mixregmls_random_mixreg.o 
 gfortran libmix.a -LC:\MinGW\lib -static-libgcc -static-libgfortran -m32 -D _WIN32 -cpp -o mixregmls_random_mixreg
 cd ..
-echo 'mixregls_random_mixor'
+move mixregmls_random_mixreg\mixregmls_random_mixreg.exe "Windows Binaries"
+echo 'mixregmls_random_mixor'
 cd mixregmls_random_mixor 
 del libmix.a 
 gfortran -c -o hermite_rule.o -g -static -m32 -D _WIN32 -cpp hermite_rule.f90
@@ -63,6 +73,7 @@ gfortran -c -o sstar.o -g -static -m32 -D _WIN32 -cpp sstar.f90
 ar -qs libmix.a hermite_rule.o sstar.o mixregmls_random_mixor.o 
 gfortran libmix.a -LC:\MinGW\lib -static-libgcc -static-libgfortran -m32 -D _WIN32 -cpp -o mixregmls_random_mixor
 cd ..
+move mixregmls_random_mixor\mixregmls_random_mixor.exe "Windows Binaries"
 echo 'mixor'
 cd mixor 
 del libmix.a
@@ -74,4 +85,5 @@ cp *.mod modules
 ar -qs libmix.a mixlib.o  sstar.o mixord_chol.o dllstub.o
 gfortran libmix.a -Jmodules -LC:\MinGW\lib -static-libgcc -static-libgfortran -m32 -D _WIN32 -cpp -o mixor
 cd .. 
+move mixor\mixor.exe "Windows Binaries"
 echo 'all done'
