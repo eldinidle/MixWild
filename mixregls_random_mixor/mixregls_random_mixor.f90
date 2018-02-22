@@ -449,7 +449,7 @@ PROGRAM MIXREGLS_subject
 #else
      FILEOUT2 = "cat mixREGLS51.OUT mixREGLS52.OUT >> " // FILEOUT
      CALL SYSTEM(FILEOUT2)
-     CALL SYSTEM("del mixREGLS51.OUT mixREGLS52.out")
+     CALL SYSTEM("rm mixREGLS51.OUT mixREGLS52.out")
      call system("mkdir work")
      call system("mv mixregls5* work")
 #endif
