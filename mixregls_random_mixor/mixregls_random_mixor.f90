@@ -621,6 +621,7 @@ PROGRAM MIXREGLS_subject
         call system("move mix_random.def work")
         call system("move "//trim(fileprefix)//"_ebvar.dat work")
         call system("move "//trim(fileprefix)//"_random.def work")
+        call system("move "//trim(fileprefix)//"_ebrandom.dat work")
         call system("del "//trim(fileprefix)//"_desc2.out "//trim(fileprefix)//"_random_"//trim(adjustl(mystr))//".out")
 #else
         CALL SYSTEM("cat "//trim(fileprefix)//"_desc2.out "//trim(fileprefix) &
