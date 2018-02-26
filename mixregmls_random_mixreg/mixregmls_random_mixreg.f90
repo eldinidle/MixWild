@@ -1957,7 +1957,11 @@ ALLOCATE (TEMPR(NVAR))
                        SE(L)=DSQRT(DABS(DER2B(LL)))
                     END DO
                  END IF
-                if(iter<=10) corec = corec*.5
+             do k=1,npar
+                 if(corec(k) > 1) corec(k) = 1
+                 if(corec(k) < -1) corec(k) = -1
+            end do
+                if(iter<=5) corec = corec*.5
 
                 write(IUNS,*)"Corrections"
                 write(IUNS,*) (corec(k), k=1,npar)
@@ -1996,21 +2000,11 @@ ALLOCATE (TEMPR(NVAR))
                  END IF
 
                  ! UPDATE PARAMETERS
-                 if(s .eq. 1 .or. ns .ge. 1 .or. iter > 5) then
                     BETA  = BETA  + COREC(1:P)
-                end if
-                 if(iter > 10) then
-                    mychol = mychol + COREC(P+1:P+RR)
-                    !spar(ns) = spar(ns) + corec(npar)
-                end if
-                do k=1,ns
-                    spar(k) = spar(k) + corec(npar-ns+k)
-                end do
-                 IF (S==1) THEN 
-                     TAU(1)= TAU(1)   + COREC(P+RR+1)
-                 ELSE IF (S>1) THEN
-                     TAU   = TAU      + COREC(P+RR+1:P+RR+S)
-                 END IF 
+                 if(iter >= 20) mychol = mychol + COREC(P+1:P+RR)*.5
+                if(ns > 1) spar(1:ns-1) = spar(1:ns-1) + corec(npar-ns+1:npar-1)*.5
+                if(ns > 0 .and. iter > 5) spar(ns) = spar(ns) + corec(npar)*.5
+                TAU   = TAU      + COREC(P+RR+1:P+RR+S)
                     LL = 1
                     do k=1, r
                         do L=1, k
