@@ -156,6 +156,7 @@ PROGRAM MIXREGLS_subject
          if(nors .ne. 0) then
             pomega = -1
             pto = -1
+	    nors = 1
         end if
         nvar2 = 1+max(pfixed,0)+max(pomega,0)+max(ptheta,0)+max(pto,0)
         nvar3 = 5+pfixed+pomega+ptheta+pto
@@ -590,7 +591,7 @@ PROGRAM MIXREGLS_subject
          WRITE(3,'("                                  mean         min         max     std dev")') 
          WRITE(3,'(" -------------------------------------------------------------------------")')
 
-        do j=1,2
+        do j=1,2-nors
             meany=sum(thetas(:,j))/dble(nc2)
             miny=minval(thetas(:,j))
             maxy=maxval(thetas(:,j))
