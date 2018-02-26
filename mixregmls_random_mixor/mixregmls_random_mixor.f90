@@ -1963,7 +1963,11 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                        SE(k)=DSQRT(DABS(DER2B(LL)))
                     END DO
                  END IF
-                if(iter<=10) corec = corec*.5
+             do k=1,npar
+                 if(corec(k) > 1) corec(k) = 1
+                 if(corec(k) < -1) corec(k) = -1
+            end do
+            if(iter<=5) corec = corec*.5
 
                 write(IUNS,*)"Corrections"
                 write(IUNS,*) (corec(k), k=1,npar)
@@ -2003,13 +2007,11 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
 
                  ! UPDATE PARAMETERS
                  BETA  = BETA  + COREC(1:P)
-                 if(iter >= 10) then
-                    mychol = mychol + COREC(P+1:P+RR)
-                    !spar(ns) = spar(ns) + corec(npar)
+                 if(iter >= 20) then
+                    mychol = mychol + COREC(P+1:P+RR)*.5
                 end if
-                do k=1,ns
-                    spar(k) = spar(k) + corec(npar-ns+k)
-                end do
+                if(ns > 1) spar(1:ns-1) = spar(1:ns-1) + corec(npar-ns+1:npar-1)*.5
+                if(ns > 0 .and. iter > 5) spar(ns) = spar(ns) + corec(npar)*.5
                  IF (S==1) THEN 
                      TAU(1)= TAU(1)   + COREC(P+RR+1)
                  ELSE IF (S>1) THEN

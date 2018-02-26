@@ -597,7 +597,7 @@ PROGRAM MIXREGLS_subject
             tempVector(:)=(thetas(:,j)-meany)**2
             TEMP=SUM(tempVector)/DBLE(nc2-1)
             stdy=DSQRT(TEMP)
-            write(mystr, '(A6, I1, A25)') "Locat_",j,"                 "
+            write(mystr, '(A6, I1, A17)') "Locat_",j,"                 "
             if(j .eq. 2 .and. nors .ne. 1) mystr = "Scale"
             if(j .eq. 1 .or. (j .eq. 2 .and. nors .ne. 1)) WRITE(3,200) mystr,meany,miny,maxy,stdy
         end do
