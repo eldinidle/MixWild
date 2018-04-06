@@ -681,7 +681,7 @@ v = mychol
 
         open(3, file=trim(fileprefix)//'_desc2.out')
          ALLOCATE(tempVector(nc2))
-    200  FORMAT(1x,A16,4F12.4)
+    200  FORMAT(1x,A25,4F12.4)
     write(3,9) head
     write(3,*)
     write(3,*) "Level 2 obervations =",nc2
@@ -2182,16 +2182,18 @@ ALLOCATE (TEMPR(NVAR))
         WRITE(IUN,804)TLAB(L),tauhat, tauhatlow, tauhatup
      END DO
     write(iun,*)
-    if(ns > 0) then
-        WRITE(IUN,'("Random (location) Effect(s)")')
+    if(nors .ne. 1 .and. ns > 0) then
+        if(ns > 1) then
+            WRITE(IUN,'("Random (location) Effect(s)")')
             do k=1,ns-1
                 L2=P+RR+S+k
-            tauhat = exp(spar(k))
-            tauhatlow = exp(spar(k)-myz*se(l2))
-            tauhatup = exp(spar(k)+myz*se(l2))
+                tauhat = exp(spar(k))
+                tauhatlow = exp(spar(k)-myz*se(l2))
+                tauhatup = exp(spar(k)+myz*se(l2))
                 WRITE(IUN,804)ALAB(k),tauhat, tauhatlow, tauhatup
             end do
-        write(iun,*)
+            write(iun,*)
+        end if
             WRITE(IUN,'("Random scale standard deviation")')
             L2=P+RR+S+ns
             tauhat = exp(spar(ns))

@@ -156,6 +156,7 @@ PROGRAM MIXREGLS_subject
          if(nors .ne. 0) then
             pomega = -1
             pto = -1
+	    nors = 1
         end if
         nvar2 = 1+max(pfixed,0)+max(pomega,0)+max(ptheta,0)+max(pto,0)
         nvar3 = 5+pfixed+pomega+ptheta+pto
@@ -551,7 +552,7 @@ PROGRAM MIXREGLS_subject
     write(3,*) "Level 2 obervations =",nc2
         !CALL SYSTEM("DEL mixREGLS52.OUT")
          ALLOCATE(tempVector(nc2))
-    200  FORMAT(1x,A25,4F12.4)
+    200  FORMAT(A25,4F12.4)
         WRITE(3,'("------------")')
          WRITE(3,'("Descriptives")')
          WRITE(3,'("------------")')
@@ -590,7 +591,7 @@ PROGRAM MIXREGLS_subject
          WRITE(3,'("                                  mean         min         max     std dev")') 
          WRITE(3,'(" -------------------------------------------------------------------------")')
 
-        do j=1,2
+        do j=1,2-nors
             meany=sum(thetas(:,j))/dble(nc2)
             miny=minval(thetas(:,j))
             maxy=maxval(thetas(:,j))
@@ -611,7 +612,7 @@ PROGRAM MIXREGLS_subject
             stdx=DSQRT(TEMP)
             WRITE(3,200) "Locat_1*Scale              ",meany,miny,maxy,stdy
         end if
-
+	write(3,*)
          close(3)
             write(mystr, '(I5)') nreps
         
@@ -2028,7 +2029,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
 	        tauhatlow = exp(spar(ns)-myz*se(l2))
 	        tauhatup = exp(spar(ns)+myz*se(l2))
 	        WRITE(IUN,804)'Std Dev                  ',tauhat, tauhatlow, tauhatup
-		end if         
+	end if         
            
          CLOSE(IUN)
          CLOSE(IUNS)

@@ -301,7 +301,7 @@ PROGRAM repeat_mixor
         write(2,804) intlabel(j+1), meanbetas(j), sqrt(totalvarhats(j)+varbetas(j)),zval,pval
     end do
     
-     804 FORMAT(A16,4(4x,F12.5))
+     804 FORMAT(A25,4(4x,F12.5))
      call system("mkdir work")
 #if defined(_WIN32)
      call system("move mixor.est work/")
