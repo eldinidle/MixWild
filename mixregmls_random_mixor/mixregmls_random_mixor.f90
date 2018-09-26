@@ -32,8 +32,8 @@ PROGRAM MIXREGmLS_subject
     CHARACTER(LEN=32),ALLOCATABLE :: BLAB(:),ALAB(:),tlab(:),var2label(:)
     CHARACTER(LEN=32),ALLOCATABLE :: intlabel(:)
     CHARACTER(LEN=4) :: HEAD(36)
-    CHARACTER(LEN=80) :: FILEDAT, FILEprefix
-    character(len=86) :: fileout
+    CHARACTER(LEN=180) :: FILEDAT, FILEprefix
+    character(len=186) :: fileout
     CHARACTER(LEN=160) :: FILEOUT2, tempstr
     character(len=32) :: mystr
     logical :: fp_equal,longdef
@@ -43,7 +43,7 @@ PROGRAM MIXREGmLS_subject
     9 FORMAT(18A4)
     READ(1,*)FILEDAT
     READ(1,*)FILEprefix
-    5 FORMAT(A80)
+    5 FORMAT(A180)
 
     pv = 0
     rv = 0
@@ -594,7 +594,7 @@ v = mychol
         allocate(tempdata(nvar3))
         open(32,file=trim(fileprefix)//'_level2.dat')
         DO I=1,NC2  ! go over level-2 clusters
-            write(32,'(i16,25f15.6)') idni(i,1),(tempsums(i,k),k=1,nvar2)
+            write(32,'(i16,125f15.6)') idni(i,1),(tempsums(i,k),k=1,nvar2)
         end do
         close(32)
         allocate(intLabel(nvar3))
