@@ -1,3 +1,8 @@
+# Binary Folders
+Mac*Binaries/
+Windows32*Binaries/
+Windows64*Binaries/
+
 # Prerequisites
 *.d
 
