@@ -269,7 +269,7 @@ PROGRAM repeat_mixreg
    WRITE(2,562)LOGL,loglsd,LOGL-nvar3+1, &
    LOGL-0.5D0*DBLE(nvar3-1)*DLOG(DBLE(NC2)),0-2*LOGL,0-2*(LOGL-nvar3+1), &
    0-2*(LOGL-0.5D0*DBLE(nvar3-1)*DLOG(DBLE(NC2)))
-   562 FORMAT(1X,'Average Log Likelihood         = ',F12.3,' (sd=',F6.3,')'/, &
+   562 FORMAT(1X,'Average Log Likelihood         = ',F12.3,' (sd=',F9.3,')'/, &
          1X,"Akaike's Information Criterion = ",F12.3,/, &
          1X,"Schwarz's Bayesian Criterion   = ",F12.3,//,&
          1X,"==> multiplied by -2             ",      /  &
