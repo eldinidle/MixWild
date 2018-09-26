@@ -1050,7 +1050,7 @@ OPEN(1,FILE=FILEDEF)
       ELSE
         WA = 0.0D0
       ENDIF
-
+      imu(1) = 0
       ! call starting value routine for intercept, 
       ! thresholds, and random-effects variance-covariance matrix
       IF (R .GT. 0 .OR. NGAM .GT. 0) THEN
