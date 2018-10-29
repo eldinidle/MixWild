@@ -1025,11 +1025,11 @@ OPEN(1,FILE=FILEDEF)
         WA = 0.0D0
         IC3 = NALL + NRP1 + NRP1 + 1
         IC4 = NALL + NRP1 + NRP1 + NRP1 + 1
-
+ialpha = 0
 !       Changed the next IF since it seems like if nomu=1 then p1 = p-1 and not p 
 !       IF (P1 .EQ. P) THEN
         IF (P1 .EQ. (P-1)) THEN
-           DO L = 1,P
+           DO L = 1,P1
               IALPHA(L) = (0-IWORKP1(L)) / ALLDAT(IC4)
               WA = WA + (IALPHA(L) * ALLDAT(IC3+R+L))
            END DO
@@ -1041,7 +1041,7 @@ OPEN(1,FILE=FILEDEF)
               END DO
            ENDIF
          
-           DO L = 1,P
+           DO L = 1,P1
               L2 = L+1
               IALPHA(L) = (0-IWORKP1(L2)) / ALLDAT(IC4)
               WA = WA + (IALPHA(L) * ALLDAT(IC3+R+L))
