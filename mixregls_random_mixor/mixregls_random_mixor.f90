@@ -1255,7 +1255,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                 WRITE(IUN,'(" ==> Means and std devs listed below are pre-standardization")') 
                 WRITE(IUN,*)
              end if
-             if (pold>0) then
+             if (p>0) then
                 WRITE(IUN,'(" Mean model covariates")')
          WRITE(IUN,'("                                  mean         min         max     std dev")') 
          WRITE(IUN,'(" -------------------------------------------------------------------------")')
@@ -1265,7 +1265,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                 WRITE(IUN,*)
              end if
 
-             if (rold>0) then
+             if (r>0) then
                 WRITE(IUN,'(" BS variance model covariates")')
          WRITE(IUN,'("                                  mean         min         max     std dev")') 
          WRITE(IUN,'(" -------------------------------------------------------------------------")')
@@ -1275,7 +1275,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                 WRITE(IUN,*)
              end if
 
-             if (sold>0) then
+             if (s>0) then
                 WRITE(IUN,'(" WS variance model covariates")')
          WRITE(IUN,'("                                  mean         min         max     std dev")') 
          WRITE(IUN,'(" -------------------------------------------------------------------------")')
