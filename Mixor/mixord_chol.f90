@@ -1047,9 +1047,9 @@ ialpha = 0
 !                 WA = WA + (IALPHA(L) * ALLDAT(IC3+R+L))
 !              END DO
 !           ENDIF
-!         ELSE
-!        WA = 0.0D0
-!         ENDIF
+         ELSE
+        WA = 0.0D0
+         ENDIF
       imu(1) = 0
       ! call starting value routine for intercept, 
       ! thresholds, and random-effects variance-covariance matrix
