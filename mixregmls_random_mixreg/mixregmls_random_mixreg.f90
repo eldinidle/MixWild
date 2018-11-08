@@ -580,7 +580,7 @@ v = mychol
      call system("mkdir work")
      call system("move mixregmls_.* work")
 #else
-    FILEOUT2 = "cat MIXREGmLS1.OUT+MIXREGmLS3.OUT MIXREGmLS2.OUT >> " // FILEOUT
+    FILEOUT2 = "cat MIXREGmLS1.OUT MIXREGmLS3.OUT MIXREGmLS2.OUT >> " // FILEOUT
     CALL SYSTEM(FILEOUT2)
     CALL SYSTEM("rm mixregmls1.OUT mixregmls2.OUT mixregmls3.OUT")
     call system("mkdir work")
