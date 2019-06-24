@@ -15,7 +15,7 @@ PROGRAM mixregmls_subject
     implicit none
     INTEGER :: I,NOBS,NVAR,NQ,AQUAD,ID2IND,YIND,P,R,S,PP,RR,SS,MISS,MAXK,NC2,&
                 MAXIT,NCENT,PNINT,RNINT,SNINT,POLD,ROLD,SOLD,myio,j,iun,npar,&
-                counter,rr1,nvar2,pfixed,ptheta,pomega,pto,k,nvar3,&
+                counter,rr1,nvar2,pfixed,ptheta,pomega,pto,k,nvar3,myseed,&
                 pv,rv,sv,nv,ll,ko,h,kv,ncov,nreps,nors,no2nd,discard0,num0
     INTEGER,ALLOCATABLE :: XIND(:),UIND(:),WIND(:),IDNI(:,:),var2IND(:),&
                             varIND(:),ids(:)
@@ -54,11 +54,12 @@ PROGRAM mixregmls_subject
    IF (conv > .9 .or. fp_equal(conv,0d0)) THEN
         BACKSPACE 1
         READ(1,*) NVAR,P,R,S,PNINT,RNINT,SNINT,pv,rv,sv,CONV,NQ,AQUAD,MAXIT,yMISS,NCENT,ncov,RIDGEIN,nreps,cutoff,nors,no2nd,&
-                  discard0
+                  discard0,myseed
         longdef = .true.
     else
         BACKSPACE 1
-        READ(1,*) NVAR, P, R, S, PNINT, RNINT, SNINT, CONV, NQ,AQUAD,MAXIT,yMISS,NCENT,ncov,RIDGEIN,nreps,cutoff,nors,no2nd,discard0
+        READ(1,*) NVAR, P, R, S, PNINT, RNINT, SNINT, CONV, NQ,AQUAD,MAXIT,yMISS,NCENT,ncov,RIDGEIN,nreps,cutoff,nors,no2nd,&
+        discard0,myseed
    ENDIF
 
     ! set SNINT=0 (for the error variance) if SNINT=1 AND S=0
@@ -66,7 +67,7 @@ PROGRAM mixregmls_subject
     IF (S==0 .AND. SNINT==1) SNINT=0
     miss = 1
     if(fp_equal(ymiss, 0.0d0)) miss = 0
-
+        
     !   SCALEP=0.50D0
     ! nvar     =  number of variables
     ! ridgein  =  initial value of the ridge
@@ -80,10 +81,10 @@ PROGRAM mixregmls_subject
     ! r        =  number of random effect variance terms
     ! s        =  number of error variance terms
     ! pnint    =  1 if no intercept for mean model (0 otherwise)
-    ! rnint    = 1 if no intercept for BS variance model
+    ! rnint    = 1 if no intercept for BS variance model 
     ! snint    = 1 if no intercept for WS variance model
     ! ncent    =  1 for standardizing of all RHS variables (0 for no standardizing)
-
+   
      READ(1,*) ID2IND, YIND
 
 ! intercepts are needed for all
@@ -161,7 +162,7 @@ PROGRAM mixregmls_subject
              nors = 1
         end if
         nvar2 = 1+max(pfixed,0)+max(pomega,0)+max(ptheta,0)+max(pto,0)
-        nvar3 = 4+R+pfixed+pomega+R*ptheta+pto
+        nvar3 = 4+R+pfixed+pomega+R*ptheta+R*(pto+1)
         allocate(var2ind(nvar2))
         allocate(var2label(nvar2))
         read(1,*) var2ind(1)
@@ -208,17 +209,17 @@ PROGRAM mixregmls_subject
         nvar3 = 0
     end if
     CLOSE(1)
-! write out the DEF file
+! write out the DEF file 
     OPEN(1,FILE=trim(fileprefix)//".def")
     WRITE(1,9) HEAD
     WRITE(1,5)FILEDAT
     WRITE(1,5)FILEprefix
     if(longdef) then
-        WRITE(1,'(10I3,E10.1E3, i4, i2, i5, f10.3, 2i2, f6.3, i4, f10.3, 3i2)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
-                    pv,rv,sv, CONV, NQ, AQUAD, MAXIT, yMISS, NCENT, ncov, ridgein,nreps,cutoff,nors,no2nd,discard0
+        WRITE(1,'(10I3,E10.1E3, i4, i2, i5, f10.3, 2i2, f6.3, i4, f10.3, 3i2,i8)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
+                    pv,rv,sv, CONV, NQ, AQUAD, MAXIT, yMISS, NCENT, ncov, ridgein,nreps,cutoff,nors,no2nd,discard0,myseed
     else
-        WRITE(1,'(7I3,E10.1E3, i4, i2, i5, f10.3, 2i2, f6.3, i4, f10.3,3i2)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
-                    CONV, NQ, AQUAD, MAXIT, yMISS, NCENT, ncov, ridgein,nreps,cutoff,nors,no2nd,discard0
+        WRITE(1,'(7I3,E10.1E3, i4, i2, i5, f10.3, 2i2, f6.3, i4, f10.3,3i2,i8)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
+                    CONV, NQ, AQUAD, MAXIT, yMISS, NCENT, ncov, ridgein,nreps,cutoff,nors,no2nd,discard0,myseed
     end if
     WRITE(1,'(20I3)') ID2IND, YIND
     IF (P .GE. 1) THEN
@@ -290,7 +291,7 @@ PROGRAM mixregmls_subject
          IF (Pfixed .GE. 1) THEN
             write(1,*) (var2Label(k+I), I=1,Pfixed)
             k = k + pfixed
-         END IF
+         END IF 
          IF (Ptheta .GE. 1) THEN
             write(1,*) (var2Label(k+I), I=1,Ptheta)
             k = k + ptheta
@@ -306,7 +307,7 @@ PROGRAM mixregmls_subject
     CLOSE(1)
 
     fileout = trim(fileprefix) // "_1.out"
-! READ THE DATA
+! READ THE DATA 
 
 ! THE DATA MUST BE SORTED BY THE ID VARIABLE
 
@@ -424,7 +425,7 @@ PROGRAM mixregmls_subject
        ! writes results out to mixregmls1.OUT
        CALL PRINTDESC(HEAD,FILEDAT,FILEprefix,CONV,NQ,AQUAD,MAXIT,NOBS,NC2,IDNI,YLABEL,meany,miny,maxy,stdy, &
        NCENT,P,R,S,BLAB,meanx,minx,maxx,stdx,ALAB,meanu,minu,maxu,stdu,TLAB,meanw,minw,maxw,stdw,num0)
-
+       
            open(10,file="mixreg_temp.dat")
     do i=1,nobs
         write(10,*) ids(i), y(i), (x(i,j),j=1,p), (u(i,j),j=1,r)
@@ -437,7 +438,7 @@ PROGRAM mixregmls_subject
     write(1,'("temp_.out")')
     write(1,'("temp_.def")')
     write(1,'("temp_.res")')
-
+    
     WRITE(1,'(5I3,E10.1E3, 9I3)') 1, 20, r+p+2, R, p, CONV, 0, 0, 0, 0, 1, 0, 1, 0, 0
     WRITE(1,'(20I3)') 1, 2
     write(1,'(20I3)') (2+p+j,j=1,r)
@@ -501,13 +502,13 @@ PROGRAM mixregmls_subject
     end do
     close(1)
     deallocate(temp3)
-
+    
 #if defined(_WIN32)
-    CALL SYSTEM("DEL mixreg.lik mixreg.est mixreg_temp.dat mixreg.var mixreg.dev mixreg.def temp_*")
-#else
-    CALL SYSTEM("rm mixreg.lik mixreg.est mixreg_temp.dat mixreg.var mixreg.dev mixreg.def temp_*")
-#endif
-
+    CALL SYSTEM("DEL mixreg.lik mixreg.est mixreg_temp.dat mixreg.var mixreg.dev mixreg.def temp_*")    
+#else    
+    CALL SYSTEM("rm mixreg.lik mixreg.est mixreg_temp.dat mixreg.var mixreg.dev mixreg.def temp_*")       
+#endif    
+    
     IUN    = 16
     OPEN(UNIT=IUN,FILE="MIXREGMLS3.OUT")
 
@@ -568,7 +569,7 @@ PROGRAM mixregmls_subject
 v = mychol
     call CHSKY(v,mychol,r,myio)
     call starttau(Y,X,W,U,NOBS,P,S,R,beta,mychol,thetas,idni,nc2,TAU,TEMPR)
-    ! estimation subroutine
+    ! estimation subroutine 
     ! writes results out to mixregmls2.OUT
     CALL mixregmlsEST(IDNI,Y,X,U,W,BLAB,ALAB,TLAB,NC2,P,R,S,CONV,NQ,AQUAD,MAXIT,NCENT,RIDGEIN, &
                        BETA,TAU,SPAR,mychol,thetas,thetavs,snint,ncov,nors,maxk)
@@ -579,13 +580,13 @@ v = mychol
      CALL SYSTEM("DEL mixregmls1.OUT mixregmls2.OUT mixregmls3.OUT")
      call system("mkdir work")
      call system("move mixregmls_.* work")
-#else
-    FILEOUT2 = "cat MIXREGmLS1.OUT MIXREGmLS3.OUT MIXREGmLS2.OUT >> " // FILEOUT
+#else    
+    FILEOUT2 = "cat MIXREGmLS1.OUT+MIXREGmLS3.OUT MIXREGmLS2.OUT >> " // FILEOUT
     CALL SYSTEM(FILEOUT2)
     CALL SYSTEM("rm mixregmls1.OUT mixregmls2.OUT mixregmls3.OUT")
     call system("mkdir work")
     call system("mv mixregmls_.* work")
-#endif
+#endif   
 
     if(no2nd .ne. 1) then
         allocate(tempdata(nvar3))
@@ -617,18 +618,18 @@ v = mychol
         write(1,*) trim(fileprefix)//'_ebvar.dat'
         write(1,*) trim(fileprefix)//'_ebrandom.dat'
         if(nors .ne. 0) then
-            write(1,*) nc2, r, 0, nreps, 123
+            write(1,*) nc2, r, 0, nreps, myseed
         else
-            write(1,*) nc2, r,1, nreps, 123
+            write(1,*) nc2, r,1, nreps, myseed
         end if
         close(1)
-
+        
 #if defined(_WIN32)
         call system("mix_random.exe")
 #else
         call system("./mix_random")
 #endif
-
+        
         open(1, file="repeat_mixreg.def")
         write(1,*) trim(fileprefix)//'_level2.dat'
         write(1,*) trim(fileprefix)//'_ebrandom.dat'
@@ -657,7 +658,7 @@ v = mychol
          IF (Pfixed .GE. 1) THEN
             write(1,*) (var2Label(k+I), I=1,Pfixed)
             k = k + pfixed
-         END IF
+         END IF 
          IF (Ptheta .GE. 1) THEN
             write(1,*) (var2Label(k+I), I=1,Ptheta)
             k = k + ptheta
@@ -670,7 +671,7 @@ v = mychol
             write(1,*) (var2Label(k+I), I=1,Pto)
          END IF
         CLOSE(1)
-
+        
 #if defined(_WIN32)
          call system("copy repeat_mixreg.def "//trim(fileprefix)//"_repeat_mixreg.def")
          call system("repeat_mixreg.exe")
@@ -681,7 +682,7 @@ v = mychol
 
         open(3, file=trim(fileprefix)//'_desc2.out')
          ALLOCATE(tempVector(nc2))
-    200  FORMAT(1x,A25,4F12.4)
+    200  FORMAT(1x,A16,4F12.4)
     write(3,9) head
     write(3,*)
     write(3,*) "Level 2 obervations =",nc2
@@ -697,14 +698,14 @@ v = mychol
          temp=SUM(tempVector)/DBLE(nc2-1)
          stdy=DSQRT(TEMP)
          WRITE(3,'(" Dependent variable")')
-         WRITE(3,'("                                  mean         min         max     std dev")')
+         WRITE(3,'("                                  mean         min         max     std dev")') 
          WRITE(3,'(" -------------------------------------------------------------------------")')
          WRITE(3,200) var2Label(1),meany,miny,maxy,stdy
          WRITE(3,*)
 
         write(3,*)
          WRITE(3,'(" Independent variables")')
-         WRITE(3,'("                                  mean         min         max     std dev")')
+         WRITE(3,'("                                  mean         min         max     std dev")') 
          WRITE(3,'(" -------------------------------------------------------------------------")')
 
         do i=1,pfixed
@@ -720,7 +721,7 @@ v = mychol
          WRITE(3,*)
          WRITE(3,*)
          WRITE(3,'(" Random Location and Scale EB mean estimates")')
-         WRITE(3,'("                                  mean         min         max     std dev")')
+         WRITE(3,'("                                  mean         min         max     std dev")') 
          WRITE(3,'(" -------------------------------------------------------------------------")')
 
         do j=1,R+1-nors
@@ -736,13 +737,16 @@ v = mychol
         end do
 
         if(pto >= 0) then
-            meany=sum(thetas(:,1)*thetas(:,R+1))/dble(nc2)
-            miny=minval(thetas(:,1)*thetas(:,R+1))
-            maxy=maxval(thetas(:,1)*thetas(:,R+1))
-            tempVector(:)=(thetas(:,1)*thetas(:,R+1)-meany)**2
-            TEMP=SUM(tempVector)/DBLE(nc2-1)
-            stdx=DSQRT(TEMP)
-            WRITE(3,200) "Locat_1*Scale              ",meany,miny,maxy,stdy
+            do j=1,R
+                meany=sum(thetas(:,j)*thetas(:,R+1))/dble(nc2)
+                miny=minval(thetas(:,j)*thetas(:,R+1))
+                maxy=maxval(thetas(:,j)*thetas(:,R+1))
+                tempVector(:)=(thetas(:,j)*thetas(:,R+1)-meany)**2
+                TEMP=SUM(tempVector)/DBLE(nc2-1)
+                stdx=DSQRT(TEMP)
+                write(mystr, '(A6, I1, A17)') "Locat_",j,"*Scale                 "
+                WRITE(3,200) mystr,meany,miny,maxy,stdy
+            end do
         end if
 
          close(3)
@@ -767,10 +771,10 @@ v = mychol
     end if
 
     !deallocate(tempsums,tempdata,tempvector)
-    !CALL SYSTEM("DEL temp.res temp.def mixreg.lik mixreg.est temp.out mixreg_temp.dat mixreg.var mixreg.dev")
+    !CALL SYSTEM("DEL temp.res temp.def mixreg.lik mixreg.est temp.out mixreg_temp.dat mixreg.var mixreg.dev")       
 CONTAINS
 
-! READ THE DATA
+! READ THE DATA 
 
 ! THE DATA MUST BE SORTED BY THE ID VARIABLE
 
@@ -829,7 +833,7 @@ ALLOCATE (TEMPR(NVAR))
               ALLOCATE (IDNI(NC2,2))
               IDNI = 0
         ENDIF
-
+   
         I     = 1
         K     = 1
         MAXK  = 0
@@ -841,7 +845,7 @@ ALLOCATE (TEMPR(NVAR))
         OPEN(1,ACTION='READ',FILE=FILEDAT)
 
         DO   ! loop forever
-
+        
               READ(1,*,END=1999)(TEMPR(myindex),myindex=1,NVAR)
                 hasmiss = 0
                 IF (MISS .EQ. 1) THEN
@@ -861,8 +865,8 @@ ALLOCATE (TEMPR(NVAR))
               IDTEMP = INT(TEMPR(ID2IND))
               ! QUERY FOR NEW ID AND SET PARAMETERS ACCORDINGLY
 
-              IF (.NOT. FIRST) THEN
-                  ! if r=0 and rnint=1 then NO random effects
+              IF (.NOT. FIRST) THEN 
+                  ! if r=0 and rnint=1 then NO random effects 
                  IF (R .GE. 1 .AND. IDTEMP .EQ. IDOLD) THEN
                     K     = K+1
                  ELSE
@@ -965,7 +969,7 @@ ALLOCATE (TEMPR(NVAR))
    DEALLOCATE(TEMPR)
 
    !  END OF READAT
-   RETURN
+   RETURN 
    END SUBROUTINE READAT
 
 ! nobs     =  number of total observations
@@ -990,12 +994,12 @@ ALLOCATE (TEMPR(NVAR))
             IDMV(I,1) = IDMV(I,1)/DBLE(IDNI(I,2))
             IF (IDNI(I,2) == 1) THEN
                  IDMV(I,2) = (IDMV(I,2) - DBLE(IDNI(I,2))*(IDMV(I,1))**2) / (DBLE(IDNI(I,2)))
-            ELSE IF (IDNI(I,2) > 1) THEN
+            ELSE IF (IDNI(I,2) > 1) THEN 
                  IDMV(I,2) = (IDMV(I,2) - DBLE(IDNI(I,2))*(IDMV(I,1))**2) / (DBLE(IDNI(I,2)) - 1.0D0)
             END IF
             IF (IDMV(I,2) .LT. 0.0D0) IDMV(I,2) = 0.0D0
         END DO
-
+        
         MEANLV=SUM(DLOG(IDMV(:,2)+1.0D0))/DBLE(NC2)
              ALLOCATE(TEMPR(NC2))
              tempR(:)=0.0D0
@@ -1016,18 +1020,18 @@ ALLOCATE (TEMPR(NVAR))
         DEALLOCATE(meanMV)
         DEALLOCATE(stdMV)
 
-    END SUBROUTINE SUBMANDV
+    END SUBROUTINE SUBMANDV 
 
    ! Standardize variables - in each column in which the STD is not 0
     SUBROUTINE STANDZ(XDAT,NR,NC,MEANX,STDX)
-
+   
         REAL(KIND=8) :: XDAT(NR,NC),MEANX(NC),STDX(NC)
         INTEGER :: NR,NC,I,J
 
            do i=1,NR
                do j=1,NC
-                  if (stdx(j) > 0.0d0) then
-                      XDAT(i,j) = (XDAT(i,j) - meanx(j)) / stdx(j)
+                  if (stdx(j) > 0.0d0) then 
+                      XDAT(i,j) = (XDAT(i,j) - meanx(j)) / stdx(j) 
                   end if
                end do
            end do
@@ -1139,7 +1143,7 @@ ALLOCATE (TEMPR(NVAR))
     subroutine STARTBETA(Y,X,NOBS,P,BETA)
 !
 !purpose:
-!to calculate starting values for the mean regression coefficients
+!to calculate starting values for the mean regression coefficients 
 !
         INTEGER,INTENT(IN)::nobs,p                             ! cols is the # of columns in the X matrix
         REAL(KIND=8),INTENT(IN),DIMENSION(:)::Y                ! input matrix Y
@@ -1158,10 +1162,10 @@ ALLOCATE (TEMPR(NVAR))
     SUBROUTINE STARTTAU(Y,X,W,U,NOBS,P,S,R,beta,chol,theta,idni,nc2,TAU,TEMPR2)
     !
     !purpose:
-    !to calculate starting values for the ERROR VARIANCE regression coefficients
+    !to calculate starting values for the ERROR VARIANCE regression coefficients 
     ! and the random scale parameters
         implicit none
-        INTEGER,INTENT(IN)::nobs,p,s,r,nc2
+        INTEGER,INTENT(IN)::nobs,p,s,r,nc2                          
         REAL(KIND=8),INTENT(IN),DIMENSION(:,:)::X,W,U,theta
         REAL(KIND=8),INTENT(IN),DIMENSION(:)::beta,chol,Y
         integer,intent(in),dimension(:,:)::idni
@@ -1183,14 +1187,14 @@ ALLOCATE (TEMPR(NVAR))
                     fitted(c) = fitted(c) + u(c,k)*theta(i,k)
                 end do
                 c = c + 1
-            end do
-        end do
+            end do    
+        end do    
         tempR2=(Y(1:nobs) - fitted)**2
         ! add a little number for zero deviations
         do i = 1,nobs
-            if (tempR2(i) .LE. SMALL) TEMPR2(i) = SMALL
+            if (tempR2(i) .LE. SMALL) TEMPR2(i) = SMALL 
         end do
-        ERRV = (SUM(TEMPR2)/DBLE(NOBS))  ! error variance ~ SSE/n
+        ERRV = (SUM(TEMPR2)/DBLE(NOBS))  ! error variance ~ SSE/n 
         TEMPR2 = DLOG(TEMPR2)
         CALL GRAMT(W,TP2,NOBS,S)
         CALL INVS(TP2,S,DET,TP3,IER)
@@ -1213,8 +1217,8 @@ ALLOCATE (TEMPR(NVAR))
 ! EM Algorithm for a random intercept model - 20 ITERATIONS
 ! this provides excellent starting values for beta, BS and WS variances, and EB estimates (mean and post var)
 
-
-        INTEGER,INTENT(IN)::nobs,p,NC2
+    
+        INTEGER,INTENT(IN)::nobs,p,NC2                          
         INTEGER,INTENT(IN),DIMENSION(:,:)::IDNI                ! ids and nobs per cluster
         REAL(KIND=8),INTENT(IN),DIMENSION(:)::Y                ! input matrix Y
         REAL(KIND=8),INTENT(IN),DIMENSION(:,:)::X              ! input matrix X
@@ -1263,9 +1267,9 @@ ALLOCATE (TEMPR(NVAR))
            TEMPNOBS = Y(1:nobs) - THETAEM2
            CALL MPYTR(X,TEMPNOBS,TEMPP,NOBS,P,0,1)
            CALL MPYM(TEMPPP,TEMPP,BETA,P,P,1,0,1)
-
+        
            ! cluster var
-           RTEMP = DOT_PRODUCT(THETAEM,THETAEM)
+           RTEMP = DOT_PRODUCT(THETAEM,THETAEM)       
            RTEMP2 = SUM(PVAREM)
            RTEMP = (RTEMP + RTEMP2)/DBLE(NC2)
            LBSVAR = DLOG(RTEMP)
@@ -1330,7 +1334,7 @@ ALLOCATE (TEMPR(NVAR))
         INTEGER:: IUN=15,I
 
      OPEN(UNIT=IUN,FILE="mixregmls1.OUT")
-
+     
      WRITE(IUN,'("mixregmls: Mixed-effects (multiple) Location Scale Model")')
      write (IUN,*)
      WRITE(IUN,'("-----------------------------")')
@@ -1366,20 +1370,20 @@ ALLOCATE (TEMPR(NVAR))
 
      WRITE(IUN,*)
      WRITE(IUN,'(" Dependent variable")')
-         WRITE(IUN,'("                                  mean         min         max     std dev")')
+         WRITE(IUN,'("                                  mean         min         max     std dev")') 
          WRITE(IUN,'(" -------------------------------------------------------------------------")')
      WRITE(IUN,200) YLABEL,meany,miny,maxy,stdy
      WRITE(IUN,*)
 
      if (ncent==1) then
-        WRITE(IUN,'(" ==> Standardization of covariates has been selected")')
-        WRITE(IUN,'(" ==> All covariates have mean=0 and std dev=1")')
-        WRITE(IUN,'(" ==> Means and std devs listed below are pre-standardization")')
+        WRITE(IUN,'(" ==> Standardization of covariates has been selected")') 
+        WRITE(IUN,'(" ==> All covariates have mean=0 and std dev=1")') 
+        WRITE(IUN,'(" ==> Means and std devs listed below are pre-standardization")') 
         WRITE(IUN,*)
      end if
      if (p>0) then
         WRITE(IUN,'(" Mean model covariates")')
-         WRITE(IUN,'("                                  mean         min         max     std dev")')
+         WRITE(IUN,'("                                  mean         min         max     std dev")') 
          WRITE(IUN,'(" -------------------------------------------------------------------------")')
         do i=1,p
            WRITE(IUN,200) BLAB(i),meanx(i),minx(i),maxx(i),stdx(i)
@@ -1389,7 +1393,7 @@ ALLOCATE (TEMPR(NVAR))
 
      if (r>0) then
         WRITE(IUN,'(" BS variance variables")')
-         WRITE(IUN,'("                                  mean         min         max     std dev")')
+         WRITE(IUN,'("                                  mean         min         max     std dev")') 
          WRITE(IUN,'(" -------------------------------------------------------------------------")')
         do i=1,r
            WRITE(IUN,200) ALAB(i),meanu(i),minu(i),maxu(i),stdu(i)
@@ -1399,7 +1403,7 @@ ALLOCATE (TEMPR(NVAR))
 
      if (s>0) then
         WRITE(IUN,'(" WS variance model covariates")')
-         WRITE(IUN,'("                                  mean         min         max     std dev")')
+         WRITE(IUN,'("                                  mean         min         max     std dev")') 
          WRITE(IUN,'(" -------------------------------------------------------------------------")')
         do i=1,s
            WRITE(IUN,200) TLAB(i),meanw(i),minw(i),maxw(i),stdw(i)
@@ -1414,10 +1418,10 @@ ALLOCATE (TEMPR(NVAR))
         CLOSE(IUN)
     END SUBROUTINE PRINTDESC
 
-! estimation subroutine
+! estimation subroutine 
     SUBROUTINE mixregmlsEST(IDNI,Y,X,U,W,BLAB,ALAB,TLAB,NC2,P,R,S,CONV,NQ,AQUAD,MAXIT,NCENT,RIDGEIN, &
         BETA,TAU,SPAR,mychol,thetas,thetavs,snint,ncov,nors,maxk)
-
+        
         INTEGER,INTENT(IN)::NC2,P,R,NQ,AQUAD,MAXIT,NCENT,snint,ncov,nors,maxk
         INTEGER,INTENT(IN),DIMENSION(:,:)::IDNI                                     ! ids and nobs per cluster
         REAL(KIND=8),INTENT(IN),DIMENSION(:)::Y                      ! input matrix Y, and random location mean and posterior variance
@@ -1541,7 +1545,7 @@ ALLOCATE (TEMPR(NVAR))
         ! start cycles
         ! cycles = 1: random intercept model with BS variance terms
         ! cycles = 2: add in scale (WS) variance terms
-        ! cycles = 3: add in random scale
+        ! cycles = 3: add in random scale 
         ! cycles = 4: use NS = R+1
 
      OPEN(2, FILE='mixregmls_.EST')
@@ -1551,7 +1555,7 @@ ALLOCATE (TEMPR(NVAR))
         CYCLELOOP:do cycles=2,ncycle
             if(cycles==2 .AND. s==1 .and. snint==0 .and. nors .eq. 0) cycle
              ! don't do cycle=2 if no WS covariates
-
+                     
             if (cycles==1) then
                 WRITE(IUN,*)
                 WRITE(IUN,*)
@@ -1696,7 +1700,7 @@ ALLOCATE (TEMPR(NVAR))
                     ridge = ridge - .05
                 END IF
                  if(ridge < 0) ridge = 0 !To get rid of -0 values
-
+                 
             !
             ! calculate the derivatives and information matrix
             !
@@ -1719,7 +1723,7 @@ ALLOCATE (TEMPR(NVAR))
                     NQ1=NQ
 
                    ! modify the points and weights for adaptive quadrature
-
+            
                     mypoints = mypoints0
                     myweights = myweights0
                     if(aquad .ne. 0 .and. (iter >= 8 .or. cycles .eq. 2 .or. cycles .eq. 4)) then
@@ -1734,9 +1738,9 @@ ALLOCATE (TEMPR(NVAR))
                              end do
                          end do
                     end if
-
+                   
                     QLOOP:DO Q=1, mytotalq  ! go over quadrature points
-
+                           
                         PSUM     = 0.0D0
                         DERQ(:)  = 0.0D0
                         DERQ2(:) = 0.0D0
@@ -1749,12 +1753,12 @@ ALLOCATE (TEMPR(NVAR))
                             uchth = DOT_PRODUCT(cholTheta,U(NOB,:))! U times Cholesky times Theta for the current LEVEL-1 obs
                             WT = DOT_PRODUCT(TAU(1:S),W(NOB,1:S))  ! W TAU for the current LEVEL-1 obs
                                                                    ! note that S changes over CYCLES
-
+                                                                   
                             !mytheta is the quadrature points vector for spar
                             if(cycles >= 3) then
                                 mytheta(1:ns) = mypoints(q,(R+1+1-ns):(R+1))
                             end if
-
+                                                                   
                             if(ns > 0) then
                                 RTEMP = WT + DOT_PRODUCT(mytheta(1:ns), spar(1:ns))
                                 IF (RTEMP .GE. LOGBIG) THEN
@@ -1767,17 +1771,17 @@ ALLOCATE (TEMPR(NVAR))
                                   WSVAR = BIG
                                ELSE
                                   WSVAR = DEXP(WT)
-                               END IF
+                               END IF               
                             END IF
-
+                            
                             !Uth is equivalent to JR* in the equations
-                            ! CALL KMPY(u(nob,:),mypoints(q,1:R),uthfull,R,1,0,1,R)
-                            call mpytr(u(nob,:), mypoints(q,1:R), uthfull,1,R,0,R)
+                            ! CALL KMPY(u(nob,:),mypoints(q,1:R),uthfull,R,1,0,1,R)   
+                            call mpytr(u(nob,:), mypoints(q,1:R), uthfull,1,R,0,R) 
             !               call chams0to1(uthfull, uth, R)
                             call chams(uthfull,uth,r,0,3)
-
+                            
                             ERRIJ = Y(NOB) - (XB + uchth) !uchth replaces ua
-                            IF (WSVAR .LE. SMALL) WSVAR = SMALL
+                            IF (WSVAR .LE. SMALL) WSVAR = SMALL   
                             LPROB = -.5D0*(DLOG(2.0D0*PI)+DLOG(WSVAR) + ERRIJ**2/WSVAR)
                             PSUM  = PSUM + LPROB
 
@@ -1787,7 +1791,7 @@ ALLOCATE (TEMPR(NVAR))
                             DZ(P+Rr+1:P+Rr+S) = (1.0D0 - (ERRIJ**2/WSVAR))*W(NOB,1:S)    ! tau
                             if(ns > 0) dz(p+rr+s+1:p+rr+s+ns) = (1.0D0 - (ERRIJ**2/WSVAR))*mytheta(1:ns) ! sparam
 
-            !write(IUNS,'(17F8.3)') i*1.0,q*1.0,j*1.0,mypoints(q,1),lprob,psum,errij,y(nob),xb,uchth,wt,(dz(k), k=1,npar)
+            !write(IUNS,'(17F8.3)') i*1.0,q*1.0,j*1.0,mypoints(q,1),lprob,psum,errij,y(nob),xb,uchth,wt,(dz(k), k=1,npar)                
                             DERQ = DERQ + (-.5D0)*DZ
 
                             ! 2ND DERIVATIVE MATRIX  (NEWTON RAPHSON)
@@ -1846,12 +1850,12 @@ ALLOCATE (TEMPR(NVAR))
 
                         IF (PSUM .GE. LOGBIG) THEN
                              LIK(I,Q) = BIG
-                        ELSE
+                        ELSE 
                              LIK(I,Q) = DEXP(PSUM)
                         END IF
 
                         rtemp2 = myweights(q)
-                        IF (RTEMP2 .LE. SMALL) RTEMP2 = SMALL
+                        IF (RTEMP2 .LE. SMALL) RTEMP2 = SMALL            
                         PRA   = DEXP(PSUM + DLOG(RTEMP2))
                         H(I)     = H(I) + PRA
                         DERP     = DERP + DERQ*PRA
@@ -1957,11 +1961,7 @@ ALLOCATE (TEMPR(NVAR))
                        SE(L)=DSQRT(DABS(DER2B(LL)))
                     END DO
                  END IF
-             do k=1,npar
-                 if(corec(k) > 1) corec(k) = 1
-                 if(corec(k) < -1) corec(k) = -1
-            end do
-                if(iter<=5) corec = corec*.5
+                if(iter<=10) corec = corec*.5
 
                 write(IUNS,*)"Corrections"
                 write(IUNS,*) (corec(k), k=1,npar)
@@ -2000,11 +2000,21 @@ ALLOCATE (TEMPR(NVAR))
                  END IF
 
                  ! UPDATE PARAMETERS
+                 if(s .eq. 1 .or. ns .ge. 1 .or. iter > 5) then
                     BETA  = BETA  + COREC(1:P)
-                 if(iter >= 20) mychol = mychol + COREC(P+1:P+RR)*.5
-                if(ns > 1) spar(1:ns-1) = spar(1:ns-1) + corec(npar-ns+1:npar-1)*.5
-                if(ns > 0 .and. iter > 5) spar(ns) = spar(ns) + corec(npar)*.5
-                TAU   = TAU      + COREC(P+RR+1:P+RR+S)
+                end if
+                 if(iter > 10) then
+                    mychol = mychol + COREC(P+1:P+RR)
+                    !spar(ns) = spar(ns) + corec(npar)
+                end if
+                do k=1,ns
+                    spar(k) = spar(k) + corec(npar-ns+k)
+                end do
+                 IF (S==1) THEN 
+                     TAU(1)= TAU(1)   + COREC(P+RR+1)
+                 ELSE IF (S>1) THEN
+                     TAU   = TAU      + COREC(P+RR+1:P+RR+S)
+                 END IF 
                     LL = 1
                     do k=1, r
                         do L=1, k
@@ -2013,14 +2023,14 @@ ALLOCATE (TEMPR(NVAR))
                         end do
                     end do
 
-
+                
 
             99  WRITE(*,'("   -2 Log-Likelihood = ",F14.5)') -2*LOGL
                  WRITE(IUNS,'("   -2 Log-Likelihood = ",F14.5)') -2*LOGL
                  WRITE(18,'("   -2 Log-Likelihood = ",F14.5)') -2*LOGL
                  ITER = ITER+1
             END DO IFINLOOP
-
+                 
             call getSStar(mychol,r,RR,sstar)
             call scm(sstar,2.0D0,sstar2,RR,RR,0)
             call trp(sstar2,sstar2t,RR,RR)
@@ -2107,11 +2117,11 @@ ALLOCATE (TEMPR(NVAR))
  804 FORMAT(A25,4(4x,F12.5))
  805 FORMAT(A10,I0,I0,13X,4(4x,F12.5))
     write(iun,*)
-      IF (NCENT==1 .AND. S>1) THEN
+      IF (NCENT==1 .AND. S>1) THEN 
          WRITE(IUN,'("STANDARDIZED TAU (WS variance parameters: log-linear model)")')
      ELSE
          WRITE(IUN,'("TAU (WS variance parameters: log-linear model)")')
-     END IF
+     END IF 
      DO L=1,S
         L2 = P+RR+L
         ZVAL = TAU(L)/SE(L2)
@@ -2162,7 +2172,7 @@ ALLOCATE (TEMPR(NVAR))
          WRITE(2,'(5F15.8)')(SE(L),L=1,NPAR)
 
      END DO CYCLELOOP
-
+     
      write(iun,*)
      write(iun,*)
      write(iun,*)
@@ -2182,25 +2192,23 @@ ALLOCATE (TEMPR(NVAR))
         WRITE(IUN,804)TLAB(L),tauhat, tauhatlow, tauhatup
      END DO
     write(iun,*)
-    if(nors .ne. 1 .and. ns > 0) then
-        if(ns > 1) then
-            WRITE(IUN,'("Random (location) Effect(s)")')
+    if(ns > 0) then
+        WRITE(IUN,'("Random (location) Effect(s)")')
             do k=1,ns-1
                 L2=P+RR+S+k
-                tauhat = exp(spar(k))
-                tauhatlow = exp(spar(k)-myz*se(l2))
-                tauhatup = exp(spar(k)+myz*se(l2))
+            tauhat = exp(spar(k))
+            tauhatlow = exp(spar(k)-myz*se(l2))
+            tauhatup = exp(spar(k)+myz*se(l2))
                 WRITE(IUN,804)ALAB(k),tauhat, tauhatlow, tauhatup
             end do
-            write(iun,*)
-        end if
+        write(iun,*)
             WRITE(IUN,'("Random scale standard deviation")')
             L2=P+RR+S+ns
             tauhat = exp(spar(ns))
             tauhatlow = exp(spar(ns)-myz*se(l2))
             tauhatup = exp(spar(ns)+myz*se(l2))
             WRITE(IUN,804)'Std Dev         ',tauhat, tauhatlow, tauhatup
-    end if
+    end if            
          CLOSE(IUN)
          CLOSE(IUNS)
          CLOSE(1)
@@ -2211,28 +2219,9 @@ ALLOCATE (TEMPR(NVAR))
     open(23,file=trim(fileprefix)//"_ebvar.dat")
     k=myqdim*(myqdim+1)/2
     DO I=1,NC2  ! go over level-2 clusters
-        write(23,'(20F15.8)') (THETAs(I,j), j=1,myqdim), (thetavs(i,j), j=1,k)
+        write(23,'(i16,20F15.8)') idni(i,1),(THETAs(I,j), j=1,myqdim), (thetavs(i,j), j=1,k)
     end do
     close(23)
-!    allocate(temploc(r))
-!    open(29,file=trim(fileprefix)//"_mvinfo.dat")
-!    write(29,*) nobs, maxk, nc2, myqdim, r, ns
-!    write(29,*) (spar(j),j=1,ns)
-!    nob = 0
-!    do i=1,nc2
-!        write(29,*) idni(i,2), h(i)
-!        do j=1,IDNI(I,2)  ! loop over level-1 observations
-!           nob=nob+1
-!                            XB = DOT_PRODUCT(BETA,X(NOB,:))        ! X BETA for the current LEVEL-1 obs
-!                            WT = DOT_PRODUCT(TAU(1:S),W(NOB,1:S))  ! W TAU for the current LEVEL-1 obs
-                                                                   ! note that S changes over CYCLES
-           !Does not correctly handle more than 2 location random effects
-!            temploc(1) = mychol(1)*u(nob,1)
-!            if(r > 1) temploc(2) = u(nob,1)*mychol(2)+u(nob,2)*mychol(3)
-!            write(29,*) y(nob)-xb, (temploc(k),k=1,r), wt
-!        end do
-!    end do
-!    close(29)
 
         deallocate(weightsR1,pointsR1,weightsR0,pointsR0,myweights,mypoints)
         deallocate(bder2,abder2,ader2,der2a,der2b,der,derp,derp2,derq,derq2,derqq,dz,derps,tader2, &
@@ -2246,30 +2235,30 @@ END PROGRAM mixregmls_subject
 
 
 ! **********************************************************************
-!
-!                  *********************
-!                  *  SUBROUTINE  INVS  *
-!                  **********************
-!
-!   INVERT A SYMMETRIC MATRIX (MS=1) IN PLACE AND CALCULATE THE
-!   DETERMINANT
-!
-!   CALL INVS (A,N,DET,W)
-!
-!   A .......... INPUT-OUTPUT MATRIX, N BY N,SYMMETRIC (MS=1)
-!   N .......... NUMBER OF ROWS IN A, EQUAL TO NUMBER OF COLUMNS
-!   DET ........ OUTPUT SCALAR, DETERMINANT OF A
-!   W .......... WORKING VECTOR OF LENGTH N
+!                                                                 
+!                  *********************                         
+!                  *  SUBROUTINE  INVS  *                         
+!                  **********************                         
+!                                                                 
+!   INVERT A SYMMETRIC MATRIX (MS=1) IN PLACE AND CALCULATE THE   
+!   DETERMINANT                                                   
+!                                                                 
+!   CALL INVS (A,N,DET,W)                                         
+!                                                                 
+!   A .......... INPUT-OUTPUT MATRIX, N BY N,SYMMETRIC (MS=1)     
+!   N .......... NUMBER OF ROWS IN A, EQUAL TO NUMBER OF COLUMNS  
+!   DET ........ OUTPUT SCALAR, DETERMINANT OF A                  
+!   W .......... WORKING VECTOR OF LENGTH N                       
 !   IER......... OPTIONAL ERROR FLAG
-!
+!                                                                       
 ! **********************************************************************
 
 !SUBROUTINE INVS(A,N,C,W,IER,VERBOSE)
 SUBROUTINE INVS(A,N,C,W,IER)
    DOUBLE PRECISION U,X,Y,Z,D,A,C,W
-   DIMENSION A(1), W(1)
-   INTEGER DIAGMK
-   INTEGER DIAG,DIAG2,ROWNO,ROWCOL
+   DIMENSION A(1), W(1)                                             
+   INTEGER DIAGMK                                                    
+   INTEGER DIAG,DIAG2,ROWNO,ROWCOL                                   
    INTEGER COLNO, IER
 !   INTEGER, INTENT(in out),OPTIONAL:: IER
 !   LOGICAL, INTENT(in),OPTIONAL:: VERBOSE
@@ -2278,81 +2267,81 @@ SUBROUTINE INVS(A,N,C,W,IER)
       IER = 0
 !   END IF
 
-   D=A(1)
-
+   D=A(1)                                                            
+   
    IF(D .NE. 0)  THEN
-
-      A(1)=1.0D0/D
-
+   
+      A(1)=1.0D0/D                                                      
+      
       IF(N .GT. 1) THEN
-
-         DIAG=1
-
-         DO K=2,N
-            KM1=K-1
-            DIAGMK=DIAG
-            DIAG=DIAG+K
-            U=A(DIAG)
-            COLNO=DIAGMK
-            DIAG2=0
-
-            DO I=1,KM1
-               X=0.0D0
-               COLNO=COLNO+1
-               ROWNO=DIAGMK
-               J=1
-               ROWCOL=DIAG2
+         
+         DIAG=1                                                            
+         
+         DO K=2,N                                                     
+            KM1=K-1             
+            DIAGMK=DIAG        
+            DIAG=DIAG+K       
+            U=A(DIAG)        
+            COLNO=DIAGMK    
+            DIAG2=0        
+            
+            DO I=1,KM1                                                     
+               X=0.0D0    
+               COLNO=COLNO+1         
+               ROWNO=DIAGMK         
+               J=1                 
+               ROWCOL=DIAG2       
                DO WHILE (J .LT. I)
-                  ROWCOL=ROWCOL+1
-                  ROWNO=ROWNO+1
-                  Y=A(ROWCOL)
-                  Z=A(ROWNO)
-                  X=X+Y*Z
-                  J=J+1
+                  ROWCOL=ROWCOL+1    
+                  ROWNO=ROWNO+1     
+                  Y=A(ROWCOL)      
+                  Z=A(ROWNO)      
+                  X=X+Y*Z        
+                  J=J+1         
                END DO
-
-               ROWCOL=ROWCOL+1
-
+               
+               ROWCOL=ROWCOL+1   
+               
                DO WHILE (J .LT. K)
-                  ROWNO=ROWNO+1
-                  Y=A(ROWCOL)
-                  Z=A(ROWNO)
-                  X=X+Y*Z
-                  ROWCOL=ROWCOL+J
-                  J=J+1
+                  ROWNO=ROWNO+1        
+                  Y=A(ROWCOL)         
+                  Z=A(ROWNO)         
+                  X=X+Y*Z           
+                  ROWCOL=ROWCOL+J  
+                  J=J+1           
                END DO
-
-               W(I)=-X
-               Y=A(COLNO)
-               U = U-X*Y
-               DIAG2=DIAG2+I
+               
+               W(I)=-X          
+               Y=A(COLNO)      
+               U = U-X*Y      
+               DIAG2=DIAG2+I 
             END DO
             D=D*U
-
+            
             IF(U .NE. 0) THEN
-               A(DIAG)=1.0D0/U
-               ROWNO=DIAGMK
-               DIAG2=0
-
-               DO I=1,KM1
-                  ROWNO=ROWNO+1
-                  DIAG2=DIAG2+I
-                  X=W(I)
-                  X=X/U
-                  A(ROWNO)=X
-                  ROWCOL=DIAG2
-                  DO J=I,KM1
-                     Y=W(J)
-                     Z=A(ROWCOL)
-                     A(ROWCOL)=Z+X*Y
-                     ROWCOL=ROWCOL+J
+               A(DIAG)=1.0D0/U   
+               ROWNO=DIAGMK     
+               DIAG2=0         
+               
+               DO I=1,KM1     
+                  ROWNO=ROWNO+1  
+                  DIAG2=DIAG2+I 
+                  X=W(I)       
+                  X=X/U       
+                  A(ROWNO)=X 
+                  ROWCOL=DIAG2      
+                  DO J=I,KM1     
+                     Y=W(J)             
+                     Z=A(ROWCOL)       
+                     A(ROWCOL)=Z+X*Y  
+                     ROWCOL=ROWCOL+J 
                   END DO
                END DO
             ENDIF
          END DO
       ENDIF
    ENDIF
-
+   
    C = D
    IF(D .EQ. 0) THEN
 !      IF(PRESENT(VERBOSE)) THEN
@@ -2366,22 +2355,22 @@ SUBROUTINE INVS(A,N,C,W,IER)
          IER = 1
 !      END IF
    ENDIF
-   RETURN
+   RETURN                                                            
 END SUBROUTINE INVS
 
 
 !*********************************************************************
-!                   **********************
-!                   *  SUBROUTINE GRAMT  *
-!                   **********************
+!                   **********************                         
+!                   *  SUBROUTINE GRAMT  *                        
+!                   **********************                       
 !
 !*********************************************************************
 SUBROUTINE GRAMT(A,C,M,N)
    REAL*8 A,C,X
    DIMENSION A(M,N),C(1)
-
+   
    IC=0
-
+   
    DO I=1,N
       DO J=1,I
          X=0.0D0
@@ -2392,7 +2381,7 @@ SUBROUTINE GRAMT(A,C,M,N)
          C(IC)=X
       END DO
    END DO
-
+   
    RETURN
 END SUBROUTINE GRAMT
 
@@ -2589,264 +2578,264 @@ END SUBROUTINE GRAMT
       GOTO 105
  6666 RETURN
       END SUBROUTINE MPYM
-
+                                                                  
 ! ************************************************
-!                  **********************
-!                  *  SUBROUTINE MPYTR  *
-!                  **********************
-!
-!   MULTIPLY TWO MATRICES, THE FIRST ONE ENTERING IN ITS TRANS-
-!                POSED FORM
-!
-!   CALL MPYTR (A,B,C,MA,NA,MSB,NB)
-!
-!   A .......... INPUT MATRIX, MA BY NA, TRANSPOSED FIRST FACTOR
-!                IN MULTIPLICATION, GENERAL RECTANGULAR (MSA=0)
-!   B .......... INPUT MATRIX, MA BY NB, SECOND FACTOR IN MULTI-
-!                PLICATION
+!                  **********************                         
+!                  *  SUBROUTINE MPYTR  *                         
+!                  **********************                         
+!                                                                 
+!   MULTIPLY TWO MATRICES, THE FIRST ONE ENTERING IN ITS TRANS-   
+!                POSED FORM                                       
+!                                                                 
+!   CALL MPYTR (A,B,C,MA,NA,MSB,NB)                               
+!                                                                 
+!   A .......... INPUT MATRIX, MA BY NA, TRANSPOSED FIRST FACTOR  
+!                IN MULTIPLICATION, GENERAL RECTANGULAR (MSA=0)   
+!   B .......... INPUT MATRIX, MA BY NB, SECOND FACTOR IN MULTI-  
+!                PLICATION                                        
 !   C .......... OUTPUT MATRIX, NA BY NB, RESULT OF MULTIPLICATION
-!                GENERAL RECTANGULAR (MSC=0)
+!                GENERAL RECTANGULAR (MSC=0)                      
 !   MA ......... NUMBER OF ROWS IN A, EQUAL TO NUMBER OF ROWS IN B
-!   NA ......... NUMBER OF COLUMNS IN A
-!   MSB ........ STORAGE MODE OF B
-!   NB ......... NUMBER OF COLUMNS IN B
-!
+!   NA ......... NUMBER OF COLUMNS IN A                           
+!   MSB ........ STORAGE MODE OF B                                
+!   NB ......... NUMBER OF COLUMNS IN B                           
+!                                                                       
 ! ************************************************
-SUBROUTINE MPYTR(A,B,C,MA,NA,MSB,NB)
-   DOUBLE PRECISION A,B,C,X
-   DIMENSION A(1),B(1),C(1)
-   K=0
-   ICB=0
-   ICCB=0
-   DO J=1,NB
-
+SUBROUTINE MPYTR(A,B,C,MA,NA,MSB,NB)                              
+   DOUBLE PRECISION A,B,C,X                                          
+   DIMENSION A(1),B(1),C(1)                                          
+   K=0                                                               
+   ICB=0                                                             
+   ICCB=0                                                            
+   DO J=1,NB                                                     
+   
       SELECT CASE (MSB)
-
+      
       CASE (0)
-         INB=(J-1)*MA+1
-         INCB=1
-         LLB=1
-         LHB=MA
-
+         INB=(J-1)*MA+1                                                    
+         INCB=1                                                            
+         LLB=1                                                             
+         LHB=MA                                                            
+      
       CASE (2)
-         INB=J
-         INCB=0
-         LLB=J
-         LHB=J
-
+         INB=J                                                             
+         INCB=0                                                            
+         LLB=J                                                             
+         LHB=J                                                             
+      
       CASE (3)
-         INB=J*(J+1)/2
-         INCB=J
-         ICCB=1
-         LLB=J
-         LHB=MA
-
+         INB=J*(J+1)/2                                                     
+         INCB=J                                                            
+         ICCB=1                                                            
+         LLB=J                                                             
+         LHB=MA                                                            
+      
       CASE (1,4)
-         INB=J*(J-1)/2+1
-         INCB=1
-         LLB=1
+         INB=J*(J-1)/2+1                                                   
+         INCB=1                                                            
+         LLB=1                                                             
          IF(MSB .NE. 1) THEN
             LHB=J
          ELSE
-            LHB=MA
+            LHB=MA 
          ENDIF
-
+      
       END SELECT
-
-      JNB=INB
-
-      DO I=1,NA
-         INA=(I-1)*MA+1
-         K=K+1
-         X=0.0D0
-
+      
+      JNB=INB                                                           
+      
+      DO I=1,NA                                                     
+         INA=(I-1)*MA+1                                                    
+         K=K+1                                                             
+         X=0.0D0                                                           
+         
          IF (LLB .GE. 1) THEN
             IF (LLB .GT. 1) INA=INA+LLB-1
-
+            
             IF(MA .GE. LHB) THEN
-               DO M=LLB,LHB
-                  X=X+A(INA)*B(INB)
+               DO M=LLB,LHB             
+                  X=X+A(INA)*B(INB)    
                   IF((MSB .EQ. 1) .AND. (M .EQ. J)) THEN
-                     INCB=J
-                     ICCB=1
+                     INCB=J           
+                     ICCB=1          
                   ENDIF
-                  INA=INA+1
-                  INB=INB+INCB+ICB
-                  ICB=ICB+ICCB
+                  INA=INA+1         
+                  INB=INB+INCB+ICB 
+                  ICB=ICB+ICCB    
                END DO
                IF(MSB .EQ. 1) THEN
-                  INCB=1
-                  ICCB=0
+                  INCB=1         
+                  ICCB=0        
                ENDIF
-               INB=JNB
-               ICB=0
+               INB=JNB 
+               ICB=0  
             ENDIF
-
+         
          ENDIF
-         C(K)=X
+         C(K)=X                                                            
       END DO
    END DO
-   RETURN
+   RETURN                                                            
 END SUBROUTINE  MPYTR
 ! ************************************************
-!
-!                  **********************
-!                  *  SUBROUTINE GRMCV  *
-!                  **********************
-!
-!   CALCULATE THE MATRIX PRODUCT OF A VECTOR, MULTIPLY IT BY A
-!   SCALAR, AND ADD IT TO A SYMMETRIC (MS=1) MATRIX ALREADY IN
-!   MEMORY
-!
-!   CALL GRMCV (A,B,X,C,N)
+!                                                                       
+!                  **********************                         
+!                  *  SUBROUTINE GRMCV  *                         
+!                  **********************                         
+!                                                                 
+!   CALCULATE THE MATRIX PRODUCT OF A VECTOR, MULTIPLY IT BY A    
+!   SCALAR, AND ADD IT TO A SYMMETRIC (MS=1) MATRIX ALREADY IN    
+!   MEMORY                                                        
+!                                                                 
+!   CALL GRMCV (A,B,X,C,N)                                        
 !
 !   A .......... INPUT MATRIX, N BY N, SYMMETRIC (MSA=1)
-!   B .......... OUTPUT MATRIX, N BY N, SYMMETRIC (MSB=1), RESULT
-!                OF ADDITION
-!   X .......... INPUT VECTOR OF LENGTH N
-!   C .......... INPUT VARIABLE OR CONSTANT (SCALAR)
-!   N .......... NUMBER OF ROWS IN A, EQUAL TO NUMBER OF COLUMNS,
-!                EQUAL TO LENGTH OF X
-!
+!   B .......... OUTPUT MATRIX, N BY N, SYMMETRIC (MSB=1), RESULT 
+!                OF ADDITION                                      
+!   X .......... INPUT VECTOR OF LENGTH N                         
+!   C .......... INPUT VARIABLE OR CONSTANT (SCALAR)              
+!   N .......... NUMBER OF ROWS IN A, EQUAL TO NUMBER OF COLUMNS, 
+!                EQUAL TO LENGTH OF X                             
+!                                                                       
 ! ************************************************
-SUBROUTINE GRMCV(A,B,X,C,N)
-   DOUBLE PRECISION A,B,C,X
-   DIMENSION A(1),B(1),X(1)
-   IC=0
-   DO I=1,N
-      DO J=1,I
-         IC=IC+1
-         B(IC)=A(IC)+C*X(I)*X(J)
+SUBROUTINE GRMCV(A,B,X,C,N)                                       
+   DOUBLE PRECISION A,B,C,X                                          
+   DIMENSION A(1),B(1),X(1)                                          
+   IC=0                                                              
+   DO I=1,N                                                      
+      DO J=1,I                                                      
+         IC=IC+1                                                           
+         B(IC)=A(IC)+C*X(I)*X(J)                                           
       END DO
    END DO
 END SUBROUTINE GRMCV
 
 ! ************************************************
 !                   **********************
-!                   *  SUBROUTINE  GRAM  *
-!                   **********************
+!                   *  SUBROUTINE  GRAM  *                          
+!                   **********************                         
+!                                                                 
+!    OBTAIN THE GRAMIAN MATRIX OF PRODUCTS OF ROW VECTORS OF A   
+!    SPECIFIED MATRIX BY POSTMULTIPLYING THE MATRIX BY ITS TRANS-   
+!    POSE                                                          
+!                                                                 
+!    CALL GRAM (A,C,M,N)                                         
 !
-!    OBTAIN THE GRAMIAN MATRIX OF PRODUCTS OF ROW VECTORS OF A
-!    SPECIFIED MATRIX BY POSTMULTIPLYING THE MATRIX BY ITS TRANS-
-!    POSE
-!
-!    CALL GRAM (A,C,M,N)
-!
-!    A .......... INPUT MATRIX, M BY N, GENERAL RECTANGULAR (MSA=0)
+!    A .......... INPUT MATRIX, M BY N, GENERAL RECTANGULAR (MSA=0) 
 !    C .......... OUTPUT MATRIX, M BY M, GRAMIAN, SYMMETRIC (MSC=1)
-!    M .......... NUMBER OF ROWS IN A
-!    N .......... NUMBER OF COLUMNS IN A
-!
+!    M .......... NUMBER OF ROWS IN A                             
+!    N .......... NUMBER OF COLUMNS IN A                         
+!                                                               
 ! ************************************************
-SUBROUTINE GRAM(A,C,M,N)
-   DOUBLE PRECISION A,C,X
-   DIMENSION A(M,N),C(1)
+SUBROUTINE GRAM(A,C,M,N)                                      
+   DOUBLE PRECISION A,C,X                                       
+   DIMENSION A(M,N),C(1)                                       
 
-   IC=0
-   DO I=1,M
-      DO J=1,I
-         X=0.0D0
-         DO K=1,N
-            X=X+A(I,K)*A(J,K)
+   IC=0                                                      
+   DO I=1,M                                             
+      DO J=1,I                                            
+         X=0.0D0                                                
+         DO K=1,N                                          
+            X=X+A(I,K)*A(J,K)                                    
          END DO
-         IC=IC+1
-         C(IC)=X
+         IC=IC+1                                             
+         C(IC)=X                                            
       END DO
    END DO
-
-   RETURN
+   
+   RETURN                                        
 END SUBROUTINE GRAM
 
 !*********************************************************************
-!
-!                   **********************
-!                   *  SUBROUTINE ADJRC  *
-!                   **********************
-!
-!    ADJOIN ONE RECTANGULAR MATRIX (MS=0) AND TWO TRIANGULAR
-!    (MS=3 OR 4) OR SYMMETRIC (MS=1) MATRICES TO OBTAIN A LARGE
-!    TRIANGULAR OR SYMMETRIC MATRIX
-!
-!    CALL ADJRC (A,B,C,D,MB,NB)
-!
-!    A .......... INPUT MATRIX, NB BY NB, SYMMETRIC OR TRUE
-!                 TRIANGULAR (MSA=1,3,4)
-!    B .......... INPUT MATRIX, MB BY NB, GENERAL RECTANGULAR
-!                 (MSB=0)
-!    C .......... INPUT MATRIX, MB BY MB, SYMMETRIC OR TRUE
-!                 TRIANGULAR (MSC=1,3,4)
-!    D .......... OUTPUT MATRIX, (NB+MB) BY (NB+MB), SYMMETRIC OR
-!                 TRUE TRIANGULAR (MSD=1,3,4)
-!    MB ......... NUMBER OF ROWS IN B, EQUAL TO NUMBER OF ROWS AND
-!                 NUMBER OF COLUMNS IN C
+!                                       
+!                   **********************                         
+!                   *  SUBROUTINE ADJRC  *                        
+!                   **********************                       
+!                                                               
+!    ADJOIN ONE RECTANGULAR MATRIX (MS=0) AND TWO TRIANGULAR   
+!    (MS=3 OR 4) OR SYMMETRIC (MS=1) MATRICES TO OBTAIN A LARGE    
+!    TRIANGULAR OR SYMMETRIC MATRIX                               
+!                                                                
+!    CALL ADJRC (A,B,C,D,MB,NB)                                 
+!                                                              
+!    A .......... INPUT MATRIX, NB BY NB, SYMMETRIC OR TRUE   
+!                 TRIANGULAR (MSA=1,3,4)                     
+!    B .......... INPUT MATRIX, MB BY NB, GENERAL RECTANGULAR      
+!                 (MSB=0)                                         
+!    C .......... INPUT MATRIX, MB BY MB, SYMMETRIC OR TRUE      
+!                 TRIANGULAR (MSC=1,3,4)                        
+!    D .......... OUTPUT MATRIX, (NB+MB) BY (NB+MB), SYMMETRIC OR  
+!                 TRUE TRIANGULAR (MSD=1,3,4)                     
+!    MB ......... NUMBER OF ROWS IN B, EQUAL TO NUMBER OF ROWS AND 
+!                 NUMBER OF COLUMNS IN C                          
 !    NB ......... NUMBER OF COLUMNS IN B, EQUAL TO NUMBER OF ROWS
-!                 AND NUMBER OF COLUMNS IN A
-!
+!                 AND NUMBER OF COLUMNS IN A                    
+!                                                              
 !*********************************************************************
 SUBROUTINE ADJRC (A,B,C,D,MB,NB)
-   DOUBLE PRECISION A,B,C,D
-   DIMENSION A(1),B(MB,NB),C(1),D(1)
-
-   K = 0
-   L = (NB*(NB+1))/2
-
-   DO J=1,L
-      D(J) = A(J)
+   DOUBLE PRECISION A,B,C,D                                          
+   DIMENSION A(1),B(MB,NB),C(1),D(1)                                
+   
+   K = 0                                                           
+   L = (NB*(NB+1))/2                                              
+   
+   DO J=1,L                                            
+      D(J) = A(J)                                         
    END DO
-
-   DO I=1,MB
-      DO J=1,NB
-         L = L + 1
-         D(L) = B(I,J)
+   
+   DO I=1,MB                                        
+      DO J=1,NB                                       
+         L = L + 1                                        
+         D(L) = B(I,J)                                   
       END DO
-
-      DO J=1,I
-         L = L + 1
-         K = K + 1
-         D(L) = C(K)
+      
+      DO J=1,I                                     
+         L = L + 1                                     
+         K = K + 1                                    
+         D(L) = C(K)                                 
       END DO
    END DO
-
-   RETURN
+   
+   RETURN                                  
 END SUBROUTINE ADJRC
 
 !*********************************************************************
-!
-!                   **********************
-!                   *  SUBROUTINE  ADJC  *
-!                   **********************
-!
-!    ADJOIN THE COLUMNS OF TWO MATRICES TO PRODUCE A RESULTANT
-!    MATRIX
-!
-!    CALL ADJC (A,B,C,M,NA,NB)
-!
+!                                        
+!                   **********************                          
+!                   *  SUBROUTINE  ADJC  *                         
+!                   **********************                        
+!                                                                
+!    ADJOIN THE COLUMNS OF TWO MATRICES TO PRODUCE A RESULTANT  
+!    MATRIX                                                    
+!                                                             
+!    CALL ADJC (A,B,C,M,NA,NB)                               
+!                                                                   
 !    A .......... INPUT MATRIX, M BY NA, GENERAL RECTANGULAR (MS=0)
-!    B .......... INPUT MATRIX, M BY NB, GENERAL RECTANGULAR (MS=0)
+!    B .......... INPUT MATRIX, M BY NB, GENERAL RECTANGULAR (MS=0) 
 !    C .......... OUTPUT MATRIX, M BY (NA+NB), RESULT OF ADJOINING,
-!                 GENERAL RECTANGULAR (MS=0)
-!    M .......... NUMBER OF ROWS IN A, EQUAL TO NUMBER OF ROWS IN B
-!    NA ......... NUMBER OF COLUMNS IN A
-!    NB ......... NUMBER OF COLUMNS IN B
-!
+!                 GENERAL RECTANGULAR (MS=0)                      
+!    M .......... NUMBER OF ROWS IN A, EQUAL TO NUMBER OF ROWS IN B 
+!    NA ......... NUMBER OF COLUMNS IN A               
+!    NB ......... NUMBER OF COLUMNS IN B              
+!                                                    
 !*********************************************************************
 SUBROUTINE ADJC(A,B,C,M,NA,NB)
-   DOUBLE PRECISION A,B,C
-   DIMENSION A(1),B(1),C(1)
-
-   K = M*NA
-   KK = M*NB
-
-   DO L=1,K
-      C(L) = A(L)
+   DOUBLE PRECISION A,B,C                            
+   DIMENSION A(1),B(1),C(1)                         
+   
+   K = M*NA                                        
+   KK = M*NB                                      
+   
+   DO L=1,K                                    
+      C(L) = A(L)                                  
+   END DO
+   
+   DO L=1,KK                                 
+      JZ = L + K                                 
+      C(JZ) = B(L)                              
    END DO
 
-   DO L=1,KK
-      JZ = L + K
-      C(JZ) = B(L)
-   END DO
-
-   RETURN
+   RETURN                              
 END SUBROUTINE ADJC
 
 
@@ -2854,14 +2843,14 @@ END SUBROUTINE ADJC
 ! SUBROUTINE PHIFN
 ! Calculate the probability distribution function (Intercept) for
 ! various distributions:
-! NORMAL, LOGISTIC, Complementary Log-Log, OR Log-Log
-!   = 0       = 1                    = 2          =3
+! NORMAL, LOGISTIC, Complementary Log-Log, OR Log-Log 
+!   = 0       = 1                    = 2          =3 
 ! ************************************************
 REAL*8 FUNCTION PHIFN(Z,nfn)
    IMPLICIT REAL*8(A-H,O-Z)
-
+   
    SELECT CASE (nfn)
-
+   
    CASE (0)    ! Normal distribution
      IF(Z.LT.-8.0D0) THEN
         PHIFN=0.000000000000001D0
@@ -2877,7 +2866,7 @@ REAL*8 FUNCTION PHIFN(Z,nfn)
         IF(Z.LE.0.0D0)PHIFN=G
         IF(Z.GT.0.0D0)PHIFN=1.0D0-G
      ENDIF
-
+     
    CASE (1)    ! Logistic distribution
      IF(Z.LT.-34.0D0) THEN
         PHIFN=0.000000000000001D0
@@ -2888,14 +2877,14 @@ REAL*8 FUNCTION PHIFN(Z,nfn)
      ELSE
         PHIFN = 1.0D0 / ( 1.0D0 + DEXP(0.0D0 - Z))
      ENDIF
-
+     
    CASE (2)    ! Complementary Log-Log distribution
      PHIFN = 1.0D0 - DEXP(0.0D0 - DEXP(Z))
-
+     
    CASE (3)    ! Log-Log distribution
      PHIFN = DEXP(0.0D0 - DEXP(Z))
    END SELECT
-
+   
 END FUNCTION PHIFN
 
 ! *****************************************************************
@@ -2903,12 +2892,12 @@ END FUNCTION PHIFN
 ! *****************************************************************
 !     This short routine does a 'safe compare' between two floating
 !     point numbers.  This will get around the compiler message:
-!
+! 
 ! "Floating-point comparisons for equality may produce inconsistent results."
-!
-!     which IS a LEGITIMATE message - it warns of a HIGH DEGREE of
+! 
+!     which IS a LEGITIMATE message - it warns of a HIGH DEGREE of 
 !     susceptibility to floating point roundoff errors, which should
-!     be fixed!  For a quick introduction to the background, read
+!     be fixed!  For a quick introduction to the background, read 
 !     http://www.lahey.com/float.htm   Tony Gray 12/18/00
 ! *****************************************************************
 LOGICAL FUNCTION FP_EQUAL(A,B)
@@ -2919,7 +2908,7 @@ LOGICAL FUNCTION FP_EQUAL(A,B)
    ELSE
       FP_EQUAL = .False.
    ENDIF
-
+   
 END FUNCTION FP_EQUAL
 
 !Calculates ratio of Standard Normal pdfs PHI(newB)/PHI(origB)
@@ -2944,34 +2933,34 @@ subroutine getSDev(n, length, Var, sdev)
 end subroutine getSDev
 
 ! ************************************************
-!                        **********************
-!                        *  SUBROUTINE CHAMS  *
-!                        **********************
-!
-!         CHANGE MODE OF STORAGE OF A SQUARE MATRIX FROM ONE
+!                        **********************                         
+!                        *  SUBROUTINE CHAMS  *                         
+!                        **********************                         
+!                                                                       
+!         CHANGE MODE OF STORAGE OF A SQUARE MATRIX FROM ONE 
 !         PACKED FORM TO ANOTHER
-!
-!         CALL CHAMS (A,B,N,MSA,MSB)
-!
-!         A .......... INPUT MATRIX, N BY N
-!         B .......... OUTPUT MATRIX, N BY N
-!         N .......... NUMBER OF ROWS IN A, EQUAL TO NUMBER OF COLUMNS
-!         MSA ........ STORAGE MODE OF A, 0..4
-!         MSB ........ DESIRED STORAGE MODE OF B, 0..4, UNEQUAL TO MSA
-!
-!     Storage modes: 0 SQUARE, 1 PACKED SYMMETRIC, 2 DIAGONAL,
+!                                                                       
+!         CALL CHAMS (A,B,N,MSA,MSB)                                    
+!                                                                       
+!         A .......... INPUT MATRIX, N BY N                             
+!         B .......... OUTPUT MATRIX, N BY N                            
+!         N .......... NUMBER OF ROWS IN A, EQUAL TO NUMBER OF COLUMNS  
+!         MSA ........ STORAGE MODE OF A, 0..4                               
+!         MSB ........ DESIRED STORAGE MODE OF B, 0..4, UNEQUAL TO MSA        
+!                                                                       
+!     Storage modes: 0 SQUARE, 1 PACKED SYMMETRIC, 2 DIAGONAL, 
 !                    3 PACKED LOWER TRIANGLE
 !                    4 PACKED UPPER TRIANGLE
 !
 ! About Matrix storage modes:
-!
+! 
 ! Matrices are stored in one of three formats in memory:
 ! Square, diagonal, or packed.  For matrices with some symmetry,
 ! (upper or lower triangular, symmetric, or diagonal), you don't
 ! have to store every element because some of the elements are known
 ! by virtue of the symmetry.  This routine handles conversion between
-! the different storage modes, taking advantage of the symmetry to
-! fill in the missing elements.
+! the different storage modes, taking advantage of the symmetry to 
+! fill in the missing elements.  
 !
 ! 0 - Square matrix, every element included, stored in row major order.
 ! 1 - Packed symmetric - Mat(I,J) = Mat(J,I), so only the upper triangle
@@ -2979,65 +2968,65 @@ end subroutine getSDev
 !     on expansion.
 ! 2 - Diagonal: linear array of N elements, representing Mat(I,I), where
 !     all nondiagonal elements are 0
-! 3 - Packed lower triangle - Mat(I,J) = 0 for I < J, others are stored
-!     as an upper triangle (like packed symmetric) and are transposed
+! 3 - Packed lower triangle - Mat(I,J) = 0 for I < J, others are stored 
+!     as an upper triangle (like packed symmetric) and are transposed 
 !     on expansion.  Upper triangle is zeroed on expansion.
 ! 4 - Packed upper triangle - Mat(I,J) = 0 for I > J, and is stored as
 !     a packed array.  On expansion no transpose is required, but lower
-!     triangle is zeroed.
+!     triangle is zeroed. 
 !
 ! ************************************************
-SUBROUTINE CHAMS(A,B,N,MSA,MSB)
+SUBROUTINE CHAMS(A,B,N,MSA,MSB)                                   
    DOUBLE PRECISION A,B
    DIMENSION A(N,N),B(N,N)
    NAMELIST /indices/ N, IR, JR, K   ! For debug dumps
-
+   
    ! To select among the conversions, take 5* the source format
    ! and add the destination format.  Some of the conversions take
-   ! more than one step, which is why there's a loop.  For the
-   ! ones that take more than one step, the select variable is
+   ! more than one step, which is why there's a loop.  For the 
+   ! ones that take more than one step, the select variable is 
    ! modified to give the next step in the process
    MMS=5*MSA+MSB
-
+   
    DO  ! keep looping till all conversions are done
-
+   
       SELECT CASE (MMS)
-
+      
       CASE (1,4) ! SQUARE TO PACKED UPPER TRIANGLE : 0->1, 0->4
-         K = 0
-         DO J=1,N
-            DO I=1,J
-               K = K + 1
-               ! B(K,1) = A(I,J)
-               B(MOD(K-1,N) + 1,(K-1)/N +1) = A(I,J)
+         K = 0                                                             
+         DO J=1,N                                                         
+            DO I=1,J              
+               K = K + 1         
+               ! B(K,1) = A(I,J)  
+               B(MOD(K-1,N) + 1,(K-1)/N +1) = A(I,J)  
             END DO
          END DO
          EXIT
-
+         
       CASE (2)   ! SQUARE TO DIAGONAL  : 0->2
-         DO J=1,N
-            B(J,1) = A(J,J)
+         DO J=1,N                                                      
+            B(J,1) = A(J,J) 
          END DO
          EXIT
-
+      
       CASE (3)   ! first step of SQUARE TO PACKED LOWER TRIANGLE : 0->3
                  ! or the last step of 3 -> 0
-         DO J=2,N
+         DO J=2,N                                                        
             DO I=1,J-1
                IF(MSA.EQ.3) THEN
-                  ! complete 3-> 0 by copying upper tri to lower and
+                  ! complete 3-> 0 by copying upper tri to lower and 
                   ! zeroing the upper.
-                  B(J,I)=B(I,J)
-                  B(I,J)=0.0D0
+                  B(J,I)=B(I,J)       
+                  B(I,J)=0.0D0       
                ELSE
-                  ! start 0-> 3 by copying lower tri to upper and
+                  ! start 0-> 3 by copying lower tri to upper and 
                   ! zeroing the lower.
-                  A(I,J)=A(J,I)
-                  A(J,I)=0.0D0
+                  A(I,J)=A(J,I)     
+                  A(J,I)=0.0D0     
                ENDIF
             END DO
          END DO
-
+         
          IF (MSA .LT. 3) THEN
             MMS = 1  ! Finish 0-> 3 by packing upper triangle into B
          ELSEIF (MSA .EQ. 3) THEN
@@ -3045,88 +3034,88 @@ SUBROUTINE CHAMS(A,B,N,MSA,MSB)
          ELSE
             MMS = -1 ! Illegal case, error
          ENDIF
-
+      
       CASE (5)   ! SYMMETRIC TO SQUARE : 1->0
-         L = N + 1
+         L = N + 1                                                         
          ! Take a triangular array stored in A() w/o its empty elements
-         ! and unpack it into B() and then copy elements across the
-         ! diagonal to make B() symmetric NxN.  TG
-         K = (N*(N+1))/2 + 1 ! count of elements in triang. less one
-         DO JR=N,1,-1
-            DO IR=JR,1,-1
-               K = K - 1
-               ! B(IR,JR) = A(K,1)
+         ! and unpack it into B() and then copy elements across the 
+         ! diagonal to make B() symmetric NxN.  TG 
+         K = (N*(N+1))/2 + 1 ! count of elements in triang. less one 
+         DO JR=N,1,-1                                                      
+            DO IR=JR,1,-1          
+               K = K - 1            
+               ! B(IR,JR) = A(K,1)     
                B(IR,JR) = A(MOD(K-1,N) + 1,(K-1)/N +1)
                ! IF(ir > N .or. jr > n .OR. K > N) then
-               !    write(6,indices)
+               !    write(6,indices) 
                ! END IF
             END DO
          END DO
-
+         
          ! Now copy across the diagonal to make a complete array
-         DO J=2,N
-            DO I=1,J
-               B(J,I) = B(I,J)
+         DO J=2,N                                                      
+            DO I=1,J                                                      
+               B(J,I) = B(I,J) 
             END DO
          END DO
          EXIT
-
+         
       CASE (10)  ! DIAGONAL TO SQUARE : 2->0
-         DO J=1,N
-            DO I=1,N
-               B(I,J) = 0.0D0
+         DO J=1,N                                                      
+            DO I=1,N                                                      
+               B(I,J) = 0.0D0         
             END DO
          END DO
-         DO J=1,N
-            B(J,J) = A(J,1)
+         DO J=1,N                                                      
+            B(J,J) = A(J,1)          
          END DO
-
+         
          EXIT
-
-      CASE (7,17,22) ! SYMMETRIC TO DIAGONAL: 1->2, 3->2, 4->2
-         DO J=1,N
+      
+      CASE (7,17,22) ! SYMMETRIC TO DIAGONAL: 1->2, 3->2, 4->2 
+         DO J=1,N                                                      
             K = J*(J+1)/2
             B(J,1) = A(MOD(K-1,N) + 1,(K-1)/N +1)
          END DO
          EXIT
-
+      
       CASE (11,13,14) ! DIAGONAL TO SYMMETRIC : 2->1, 2->3, 2->4
-         L = N + 1
-         K = (N*L)/2
-         DO J=1,N
-            M = N + 1 - J
-            L = L - 1
-            !B(K,1) = A(L,1)
-            B(MOD(K-1,N) + 1,(K-1)/N +1) = A(L,1)
-            K = K - M
+         L = N + 1                                                         
+         K = (N*L)/2                                                       
+         DO J=1,N                                                      
+            M = N + 1 - J           
+            L = L - 1           
+            !B(K,1) = A(L,1)    
+            B(MOD(K-1,N) + 1,(K-1)/N +1) = A(L,1)    
+            K = K - M         
          END DO
-         L = 2
-         DO J=2,N
-            LL = L + J - 2
-            DO I=L,LL
-               !B(I,1) = 0.0D0
-               B(MOD(I-1,N) + 1,(I-1)/N +1) = 0.0D0
+         L = 2                                                             
+         DO J=2,N                                                      
+            LL = L + J - 2   
+            DO I=L,LL                                                     
+               !B(I,1) = 0.0D0 
+               B(MOD(I-1,N) + 1,(I-1)/N +1) = 0.0D0 
             END DO
-            L = L + J
+            L = L + J        
          END DO
-
+     
          EXIT
-
+      
       CASE (15,20) ! LOWER/UPPER TRUE TRIANGLE TO SQUARE : 3->0, 4->0
-         L = N + 1
-         K = (L*N)/2 + 1
+         L = N + 1                                                         
+         K = (L*N)/2 + 1                                                   
          DO JR=N,1,-1
             DO IR=JR,1,-1
-               K = K - 1
-               !B(IR,JR) = A(K,1)
+               K = K - 1      
+               !B(IR,JR) = A(K,1) 
                B(IR,JR) = A(MOD(K-1,N) + 1,(K-1)/N +1)
             END DO
          END DO
-
-         DO J=2,N
-            L = J - 1
-            DO I=1,L
-               B(J,I) = 0.0D0
+         
+         DO J=2,N                                                      
+            L = J - 1           
+            DO I=1,L                                                      
+               B(J,I) = 0.0D0  
             END DO
          END DO
          IF(MSA.EQ.3) THEN
@@ -3134,223 +3123,223 @@ SUBROUTINE CHAMS(A,B,N,MSA,MSB)
          ELSE
             EXIT
          ENDIF
-
+      
       CASE DEFAULT
 !         CALL POST_ERROR('ERROR MESSAGE FROM SUBROUTINE CHAMS: ' // &
 !                'ILLICIT COMBINATION OF STORAGE MODES')
       END SELECT
    END DO
-
+   
 END SUBROUTINE CHAMS
 
-SUBROUTINE CHAMS0to1(A,B,N)
+SUBROUTINE CHAMS0to1(A,B,N)                                   
    DOUBLE PRECISION A,B
    DIMENSION A(N,N),B(N*(N+1)/2)
-
-         K = 0
-         DO J=1,N
-            DO I=1,J
-               K = K + 1
-               B(K) = A(i,j)
+   
+         K = 0                                                             
+         DO J=1,N                                                         
+            DO I=1,J              
+               K = K + 1         
+               B(K) = A(i,j)  
             END DO
          END DO
 
 END SUBROUTINE CHAMS0to1
 
 ! ************************************************
-!
-!                  **********************
-!                  *  SUBROUTINE  KMPY  *
-!                  **********************
-!
-!   FORM THE KRONECKER (DIRECT) PRODUCT OF TWO MATRICES
-!
-!   CALL KMPY (A,B,C,MA,NA,MS,MB,NB)
-!
-!   A .......... INPUT MATRIX, MA BY NA, FIRST FACTOR IN
-!                KRONECKER MULTIPLICATION
-!   B .......... INPUT MATRIX, MB BY NB, SECOND FACTOR IN
-!                KRONECKER MULTIPLICATION
-!   C .......... OUTPUT MATRIX, (MA*MB) BY (NA*NB), KRONECKER
-!                PRODUCT
-!   MA ......... NUMBER OF ROWS IN A
-!   NA ......... NUMBER OF COLUMNS IN A
-!   MS ......... STORAGE MODE OF A, EQUAL TO STORAGE MODE OF B
-!   MB ......... NUMBER OF ROWS IN B
-!   NB ......... NUMBER OF COLUMNS IN B
-!
+!                                                                 
+!                  **********************                         
+!                  *  SUBROUTINE  KMPY  *                         
+!                  **********************                         
+!                                                                 
+!   FORM THE KRONECKER (DIRECT) PRODUCT OF TWO MATRICES           
+!                                                                 
+!   CALL KMPY (A,B,C,MA,NA,MS,MB,NB)                              
+!                                                                 
+!   A .......... INPUT MATRIX, MA BY NA, FIRST FACTOR IN          
+!                KRONECKER MULTIPLICATION                         
+!   B .......... INPUT MATRIX, MB BY NB, SECOND FACTOR IN         
+!                KRONECKER MULTIPLICATION                         
+!   C .......... OUTPUT MATRIX, (MA*MB) BY (NA*NB), KRONECKER     
+!                PRODUCT                                          
+!   MA ......... NUMBER OF ROWS IN A                              
+!   NA ......... NUMBER OF COLUMNS IN A                           
+!   MS ......... STORAGE MODE OF A, EQUAL TO STORAGE MODE OF B    
+!   MB ......... NUMBER OF ROWS IN B                              
+!   NB ......... NUMBER OF COLUMNS IN B                           
+!                                                                 
 ! ************************************************
-SUBROUTINE KMPY(A,B,C,P,Q,MS,R,S)
-   DOUBLE PRECISION A,B,C
-   INTEGER P,Q,R,S,EA,EB
-   DIMENSION A(P,Q),B(R,S),C(1)
-   EQUIVALENCE (EB,KK),(NC,LL)
-
+SUBROUTINE KMPY(A,B,C,P,Q,MS,R,S)                                 
+   DOUBLE PRECISION A,B,C                                            
+   INTEGER P,Q,R,S,EA,EB                                             
+   DIMENSION A(P,Q),B(R,S),C(1)                                      
+   EQUIVALENCE (EB,KK),(NC,LL)                                       
+   
    IF (MS .LT. 1) THEN
-      IC=P*Q*R*S
-      II=Q+1
-
-      DO I=1,Q
-         II=II-1
-         JJ=S+1
-
-         DO J=1,S
-            JJ=JJ-1
-            KK=P+1
-
-            DO K=1,P
-               KK=KK-1
-               LL=R+1
-
-               DO L=1,R
-                  LL=LL-1
-                  C(IC)=A(KK,II)*B(LL,JJ)
-                  IC=IC-1
+      IC=P*Q*R*S                                                        
+      II=Q+1                                                            
+      
+      DO I=1,Q                                                      
+         II=II-1                                                           
+         JJ=S+1                                                            
+         
+         DO J=1,S             
+            JJ=JJ-1          
+            KK=P+1          
+            
+            DO K=1,P       
+               KK=KK-1    
+               LL=R+1    
+               
+               DO L=1,R 
+                  LL=LL-1  
+                  C(IC)=A(KK,II)*B(LL,JJ) 
+                  IC=IC-1                
                END DO
             END DO
          END DO
       END DO
-
+      
    ELSEIF (MS .EQ. 1) THEN
-
-      EA=(P*(P+1)/2)+1
-      NEB=(R*(R+1)/2)+1
-      IC=P*R
-      IC=(IC*(IC+1))/2
-      KR=R-1
-      II=P+1
-
-      DO I=1,P
-         II=II-1
-         KEA=EA
-         EB=NEB
-         KJJ=R+1
-
-         DO J=1,R
+   
+      EA=(P*(P+1)/2)+1                                                  
+      NEB=(R*(R+1)/2)+1                                                 
+      IC=P*R                                                            
+      IC=(IC*(IC+1))/2                                                  
+      KR=R-1                                                            
+      II=P+1                                                            
+      
+      DO I=1,P                                                      
+         II=II-1                                                           
+         KEA=EA                                                            
+         EB=NEB                                                            
+         KJJ=R+1                                                           
+         
+         DO J=1,R                                                      
             KJJ=KJJ-1
-            EA=KEA
-
+            EA=KEA 
+            
             DO K=1,II
-               EA=EA-1
-               JJ=KR
-               NC=R
-               IF (K .EQ. 1) NC=KJJ
-
-               DO L=1,NC
+               EA=EA-1 
+               JJ=KR  
+               NC=R  
+               IF (K .EQ. 1) NC=KJJ  
+               
+               DO L=1,NC            
                   IF (K .EQ. 1) THEN
-                     EB=EB-1
+                     EB=EB-1        
                   ELSEIF (L .EQ. 1) THEN
-                     EB=NEB-J
+                     EB=NEB-J      
                   ELSEIF (L .LE. J) THEN
-                     EB=EB-JJ
-                     JJ=JJ-1
+                     EB=EB-JJ     
+                     JJ=JJ-1     
                   ELSE
                      EB=EB-1
                   ENDIF
-                  ! C(IC)=A(EA,1)*B(EB,1)
+                  ! C(IC)=A(EA,1)*B(EB,1)  
                   C(IC)=A(MOD(EA-1,P) + 1,(EA-1)/P +1) &
                         * B(MOD(EB-1,R) + 1,(EB-1)/R +1)
-                  IC=IC-1
+                  IC=IC-1               
                END DO
             END DO
          END DO
       END DO
-
+   
    ELSE
-      IC=P*R
-      II=P+1
-
-      DO I=1,P
-         II=II-1
-         JJ=R+1
-
-         DO J=1,R
-            JJ=JJ-1
-            C(IC)=A(II,1)*B(JJ,1)
-            IC=IC-1
+      IC=P*R                                                            
+      II=P+1                                                            
+      
+      DO I=1,P                                                      
+         II=II-1                                                           
+         JJ=R+1                                                            
+         
+         DO J=1,R                                                      
+            JJ=JJ-1      
+            C(IC)=A(II,1)*B(JJ,1)  
+            IC=IC-1     
          END DO
       END DO
    ENDIF
-
+   
 END SUBROUTINE KMPY
 
 
 ! ************************************************
-!                  **********************
-!                  *  SUBROUTINE  CHSKY *
-!                  **********************
-!   CALL CHSKY(A,B,N,NONPOS)
-!
-!   A .......... INPUT MATRIX, N BY N, SYMMETRIC (MSA=1)
-!   B .......... OUTPUT MATRIX, N BY N, CHOLESKY FACTOR, TRUE
-!                LOWER TRIANGULAR (MSB=3)
-!   N .......... NUMBER OF ROWS IN A, EQUAL TO NUMBER OF COLUMNS
-!   NONPOS ..... OUTPUT VARIABLE, EQUALS  1  IF  A  IS POSITIVE-
-!                DEFINITE, EQUALS  0  OTHERWISE
-!
+!                  **********************                         
+!                  *  SUBROUTINE  CHSKY *                         
+!                  **********************                         
+!   CALL CHSKY(A,B,N,NONPOS)                                      
+!                                                                 
+!   A .......... INPUT MATRIX, N BY N, SYMMETRIC (MSA=1)          
+!   B .......... OUTPUT MATRIX, N BY N, CHOLESKY FACTOR, TRUE     
+!                LOWER TRIANGULAR (MSB=3)                         
+!   N .......... NUMBER OF ROWS IN A, EQUAL TO NUMBER OF COLUMNS  
+!   NONPOS ..... OUTPUT VARIABLE, EQUALS  1  IF  A  IS POSITIVE-  
+!                DEFINITE, EQUALS  0  OTHERWISE                   
+!                                                                       
 ! ************************************************
-SUBROUTINE CHSKY(A,B,N,NONPOS)
-   IMPLICIT REAL*8 (A-H,O-Z)
-   REAL*8 A(1),B(1)
-
+SUBROUTINE CHSKY(A,B,N,NONPOS)                                    
+   IMPLICIT REAL*8 (A-H,O-Z)                                         
+   REAL*8 A(1),B(1)                                                  
+   
    IF(A(1).LT.1.D-30) THEN
-      NONPOS=0
+      NONPOS=0                                                          
    ELSE
-      NONPOS=1
-      X=DSQRT(A(1))
-      B(1)=X
-
+      NONPOS=1                                                          
+      X=DSQRT(A(1))                                                     
+      B(1)=X                                                            
+     
       IF(N .GT. 1) THEN
-         N1=N-1
-         KC=1
-         IFIR=1
-         DO J=1,N1
-            KC=KC+J
-            B(KC)=A(KC)/X
+         N1=N-1          
+         KC=1           
+         IFIR=1        
+         DO J=1,N1    
+            KC=KC+J  
+            B(KC)=A(KC)/X   
          END DO
-
-         DO I=1,N1
-
-            IFIR=IFIR+I
-            KC=IFIR
-            X=0.0D0
-
-            DO J=1,I
-               X=X+B(KC)*B(KC)
-               KC=KC+1
+         
+         DO I=1,N1         
+            
+            IFIR=IFIR+I   
+            KC=IFIR      
+            X=0.0D0     
+            
+            DO J=1,I                                                      
+               X=X+B(KC)*B(KC)    
+               KC=KC+1 
             END DO
-
-            X = A(KC) - X
-
+            
+            X = A(KC) - X              
+            
             IF(X.LT.1.D-30) THEN
-               NONPOS=0
+               NONPOS=0               
                EXIT
             END IF
-
-            X=DSQRT(X)
-            B(KC)=X
-            II=I+1
-
+            
+            X=DSQRT(X)             
+            B(KC)=X               
+            II=I+1               
+            
             IF (II.EQ.N) EXIT
-
-            JC=IFIR
-
-            DO J=II,N1
-               JC=JC+J
-               IC=JC
-               KC=IFIR
-               Y=0.0D0
-
-               DO K=1,I
-                  Y=Y+B(IC)*B(KC)
-                  KC=KC+1
-                  IC=IC+1
+            
+            JC=IFIR             
+            
+            DO J=II,N1                                                    
+               JC=JC+J          
+               IC=JC           
+               KC=IFIR        
+               Y=0.0D0       
+               
+               DO K=1,I    
+                  Y=Y+B(IC)*B(KC)    
+                  KC=KC+1           
+                  IC=IC+1          
                END DO
-
-               B(IC)=(A(IC)-Y)/X
+               
+               B(IC)=(A(IC)-Y)/X  
             END DO
          END DO
       END IF
    END IF
-
+   
 END SUBROUTINE CHSKY

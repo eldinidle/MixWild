@@ -14,7 +14,7 @@
 PROGRAM MIXREGLS_subject
     implicit none
     INTEGER :: I,NOBS,NVAR,NQ,AQUAD,ID2IND,YIND,P,R,S,PP,RR,SS,MISS,MAXK,NC2,num0,&
-                MAXIT,NCENT,PNINT,RNINT,SNINT,POLD,ROLD,SOLD,j,ll,kv,ko,h,&
+                MAXIT,NCENT,PNINT,RNINT,SNINT,POLD,ROLD,SOLD,j,ll,kv,ko,h,myseed,&
                 nvar2,pfixed,ptheta,pomega,pto,k,nvar3,ncov,ns,maxj,pv,rv,sv,nv,nreps,nors,discard0,no2nd
     INTEGER,ALLOCATABLE :: XIND(:),UIND(:),WIND(:),IDNI(:,:),var2IND(:),icode(:),varIND(:)
     REAL(KIND=8) :: RIDGEIN,MEANY,STDY,CONV,YMISS,MINY,MAXY,SDLV,RCORR,RTEMP,&
@@ -52,11 +52,12 @@ PROGRAM MIXREGLS_subject
    IF (conv > .9 .or. fp_equal(conv,0d0)) THEN
         BACKSPACE 1
         READ(1,*) NVAR, P, R, S, PNINT, RNINT,SNINT,pv,rv,sv,CONV,NQ,AQUAD,MAXIT,yMISS,NCENT,NCOV,RIDGEIN,&
-        nreps,cutoff,nors,no2nd,discard0
+        nreps,cutoff,nors,no2nd,discard0,myseed
         longdef = .true.
     else
         BACKSPACE 1
-        READ(1,*) NVAR, P, R, S, PNINT, RNINT, SNINT, CONV,NQ,AQUAD,MAXIT,yMISS,NCENT,NCOV,RIDGEIN,nreps,cutoff,nors,no2nd,discard0
+        READ(1,*) NVAR, P, R, S, PNINT, RNINT, SNINT, CONV,NQ,AQUAD,MAXIT,yMISS,NCENT,NCOV,RIDGEIN,nreps,cutoff,&
+            nors,no2nd,discard0,myseed
    ENDIF
 
     ! set SNINT=0 (for the error variance) if SNINT=1 AND S=0
@@ -156,7 +157,6 @@ PROGRAM MIXREGLS_subject
          if(nors .ne. 0) then
             pomega = -1
             pto = -1
-	    nors = 1
         end if
         nvar2 = 1+max(pfixed,0)+max(pomega,0)+max(ptheta,0)+max(pto,0)
         nvar3 = 5+pfixed+pomega+ptheta+pto
@@ -207,11 +207,11 @@ PROGRAM MIXREGLS_subject
     WRITE(1,5)FILEDAT
     WRITE(1,5)FILEprefix
     if(longdef) then
-        WRITE(1,'(10I3,E10.1E3, i4, i2, i5, f12.3, 2i2, f6.3, i4, f10.3, 3i2)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
-                pv, rv, sv, CONV, NQ, AQUAD, MAXIT, yMISS, NCENT, NCOV, RIDGEIN, nreps, cutoff, nors, no2nd, discard0
+        WRITE(1,'(10I3,E10.1E3, i4, i2, i5, f12.3, 2i2, f6.3, i4, f10.3, 3i2, i8)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
+                pv, rv, sv, CONV, NQ, AQUAD, MAXIT, yMISS, NCENT, NCOV, RIDGEIN, nreps, cutoff, nors, no2nd, discard0,myseed
     else
-        WRITE(1,'(7I3,E10.1E3, i4, i2, i5, f12.3, 2i2, f6.3, i4, f10.3, 3i2)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
-                CONV, NQ, AQUAD, MAXIT, yMISS, NCENT, NCOV, RIDGEIN, nreps, cutoff, nors, no2nd, discard0
+        WRITE(1,'(7I3,E10.1E3, i4, i2, i5, f12.3, 2i2, f6.3, i4, f10.3, 3i2, i8)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
+                CONV, NQ, AQUAD, MAXIT, yMISS, NCENT, NCOV, RIDGEIN, nreps, cutoff, nors, no2nd, discard0,myseed
     end if    
     WRITE(1,'(20I3)') ID2IND, YIND
     IF (P .GE. 1) THEN
@@ -450,7 +450,7 @@ PROGRAM MIXREGLS_subject
 #else
      FILEOUT2 = "cat mixREGLS51.OUT mixREGLS52.OUT >> " // FILEOUT
      CALL SYSTEM(FILEOUT2)
-     CALL SYSTEM("rm mixREGLS51.OUT mixREGLS52.out")
+     CALL SYSTEM("del mixREGLS51.OUT mixREGLS52.out")
      call system("mkdir work")
      call system("mv mixregls5* work")
 #endif
@@ -484,9 +484,9 @@ PROGRAM MIXREGLS_subject
         write(1,*) trim(fileprefix)//'_ebvar.dat'
         write(1,*) trim(fileprefix)//'_ebrandom.dat'
         if(nors .ne. 0) then
-            write(1,*) nc2, 1, 0, nreps, 123
+            write(1,*) nc2, 1, 0, nreps, myseed
         else
-            write(1,*) nc2, 1, 1, nreps, 123
+            write(1,*) nc2, 1, 1, nreps, myseed
         end if
         close(1)
 
@@ -552,7 +552,7 @@ PROGRAM MIXREGLS_subject
     write(3,*) "Level 2 obervations =",nc2
         !CALL SYSTEM("DEL mixREGLS52.OUT")
          ALLOCATE(tempVector(nc2))
-    200  FORMAT(A25,4F12.4)
+    200  FORMAT(1x,A25,4F12.4)
         WRITE(3,'("------------")')
          WRITE(3,'("Descriptives")')
          WRITE(3,'("------------")')
@@ -591,14 +591,14 @@ PROGRAM MIXREGLS_subject
          WRITE(3,'("                                  mean         min         max     std dev")') 
          WRITE(3,'(" -------------------------------------------------------------------------")')
 
-        do j=1,2-nors
+        do j=1,2
             meany=sum(thetas(:,j))/dble(nc2)
             miny=minval(thetas(:,j))
             maxy=maxval(thetas(:,j))
             tempVector(:)=(thetas(:,j)-meany)**2
             TEMP=SUM(tempVector)/DBLE(nc2-1)
             stdy=DSQRT(TEMP)
-            write(mystr, '(A6, I1, A17)') "Locat_",j,"                 "
+            write(mystr, '(A6, I1, A25)') "Locat_",j,"                 "
             if(j .eq. 2 .and. nors .ne. 1) mystr = "Scale"
             if(j .eq. 1 .or. (j .eq. 2 .and. nors .ne. 1)) WRITE(3,200) mystr,meany,miny,maxy,stdy
         end do
@@ -612,7 +612,7 @@ PROGRAM MIXREGLS_subject
             stdx=DSQRT(TEMP)
             WRITE(3,200) "Locat_1*Scale              ",meany,miny,maxy,stdy
         end if
-	write(3,*)
+
          close(3)
             write(mystr, '(I5)') nreps
         
@@ -622,7 +622,6 @@ PROGRAM MIXREGLS_subject
         call system("move mix_random.def work")
         call system("move "//trim(fileprefix)//"_ebvar.dat work")
         call system("move "//trim(fileprefix)//"_random.def work")
-        call system("move "//trim(fileprefix)//"_ebrandom.dat work")
         call system("del "//trim(fileprefix)//"_desc2.out "//trim(fileprefix)//"_random_"//trim(adjustl(mystr))//".out")
 #else
         CALL SYSTEM("cat "//trim(fileprefix)//"_desc2.out "//trim(fileprefix) &
@@ -2029,7 +2028,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
 	        tauhatlow = exp(spar(ns)-myz*se(l2))
 	        tauhatup = exp(spar(ns)+myz*se(l2))
 	        WRITE(IUN,804)'Std Dev                  ',tauhat, tauhatlow, tauhatup
-	end if         
+		end if         
            
          CLOSE(IUN)
          CLOSE(IUNS)
@@ -2040,25 +2039,9 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
     open(23,file=trim(fileprefix)//"_ebvar.dat")
     k=myqdim*(myqdim+1)/2
     DO I=1,NC2  ! go over level-2 clusters
-        write(23,'(20F15.8)') (THETAs(I,j), j=1,myqdim), (thetavs(i,j), j=1,k)
+        write(23,'(i16,20F15.8)') idni(i,1),(THETAs(I,j), j=1,myqdim), (thetavs(i,j), j=1,k)
     end do
     close(23)
-!    open(29,file=trim(fileprefix)//"_mvinfo.dat")
-!    write(29,*) nobs, maxk, nc2, 2, 1, ns
-!    write(29,*) (spar(j),j=1,ns)
-!    nob = 0
-!    do i=1,nc2
-!        write(29,*) idni(i,2), h(i)
-!        do j=1,IDNI(I,2)  ! loop over level-1 observations
-!           nob=nob+1 
-!                            XB = DOT_PRODUCT(BETA,X(NOB,:))        ! X BETA for the current LEVEL-1 obs
-!                            UA = DOT_PRODUCT(ALPHA,U(NOB,:))       ! U ALPHA for the current LEVEL-1 obs
-!                            WT = DOT_PRODUCT(TAU(1:S),W(NOB,1:S))  ! W TAU for the current LEVEL-1 obs
-                                                                   ! note that S changes over CYCLES
-!            write(29,*) y(nob)-xb, exp(.5*ua), wt
-!        end do
-!    end do
-!    close(29)
 
         deallocate(weightsR1,pointsR1,weightsR0,pointsR0,myweights,mypoints)
         deallocate(bder2,abder2,ader2,der2a,der2b,der,derp,derp2,derq,derq2,derqq,dz,derps,tader2, &

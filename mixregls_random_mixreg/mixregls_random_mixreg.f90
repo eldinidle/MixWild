@@ -13,7 +13,7 @@
 
 PROGRAM MIXREGLS_subject
     implicit none
-    INTEGER :: I,NOBS,NVAR,NQ,AQUAD,ID2IND,YIND,P,R,S,PP,RR,SS,MISS,MAXK,NC2,&
+    INTEGER :: I,NOBS,NVAR,NQ,AQUAD,ID2IND,YIND,P,R,S,PP,RR,SS,MISS,MAXK,NC2,myseed,&
                 MAXIT,NCENT,PNINT,RNINT,SNINT,POLD,ROLD,SOLD,j,ll,h,ko,kv,nvar2,num0,&
                 pfixed,ptheta,pomega,pto,k,nvar3,ncov,ns,pv,rv,sv,nv,nreps,no2nd,nors,discard0
     INTEGER,ALLOCATABLE :: XIND(:),UIND(:),WIND(:),IDNI(:,:),var2IND(:),varind(:)
@@ -52,11 +52,12 @@ PROGRAM MIXREGLS_subject
    IF (conv > .9 .or. fp_equal(conv,0d0)) THEN
         BACKSPACE 1
         READ(1,*) NVAR,P,R,S,PNINT,RNINT,SNINT,pv,rv,sv,CONV,NQ,AQUAD,MAXIT,yMISS,NCENT,NCOV,RIDGEIN,&
-                nreps,cutoff,nors,no2nd,discard0
+                nreps,cutoff,nors,no2nd,discard0,myseed
         longdef = .true.
     else
         BACKSPACE 1
-        READ(1,*) NVAR, P, R, S, PNINT, RNINT, SNINT, CONV,NQ,AQUAD,MAXIT,yMISS,NCENT,NCOV,RIDGEIN,nreps,cutoff,nors,no2nd,discard0
+        READ(1,*) NVAR, P, R, S, PNINT, RNINT, SNINT, CONV,NQ,AQUAD,MAXIT,yMISS,NCENT,NCOV,RIDGEIN,&
+            nreps,cutoff,nors,no2nd,discard0,myseed
    ENDIF
 
     ! set SNINT=0 (for the error variance) if SNINT=1 AND S=0
@@ -211,11 +212,11 @@ PROGRAM MIXREGLS_subject
     WRITE(1,5)FILEprefix
 !    WRITE(1,5)FILEDEF
      if(longdef) then
-        WRITE(1,'(10I3,E10.1E3, i4, i2, i5, f12.3, 2i2, f6.3, i4, f10.3, 3i2)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
-                pv, rv, sv, CONV, NQ, AQUAD, MAXIT, yMISS, NCENT, NCOV, RIDGEIN, nreps, cutoff, nors, no2nd, discard0
+        WRITE(1,'(10I3,E10.1E3, i4, i2, i5, f12.3, 2i2, f6.3, i4, f10.3, 3i2, i8)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
+                pv, rv, sv, CONV, NQ, AQUAD, MAXIT, yMISS, NCENT, NCOV, RIDGEIN, nreps, cutoff, nors, no2nd, discard0, myseed
     else
-        WRITE(1,'(7I3,E10.1E3, i4, i2, i5, f12.3, 2i2, f6.3, i4, f10.3, 3i2)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
-                CONV, NQ, AQUAD, MAXIT, yMISS, NCENT, NCOV, RIDGEIN, nreps, cutoff, nors, no2nd, discard0
+        WRITE(1,'(7I3,E10.1E3, i4, i2, i5, f12.3, 2i2, f6.3, i4, f10.3, 3i2, i8)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
+                CONV, NQ, AQUAD, MAXIT, yMISS, NCENT, NCOV, RIDGEIN, nreps, cutoff, nors, no2nd, discard0, myseed
     end if    
     WRITE(1,'(20I3)') ID2IND, YIND
     IF (P .GE. 1) THEN
@@ -487,9 +488,9 @@ PROGRAM MIXREGLS_subject
         write(1,*) trim(fileprefix)//'_ebvar.dat'
         write(1,*) trim(fileprefix)//'_ebrandom.dat'
         if(nors .ne. 0) then
-            write(1,*) nc2, 1, 0, nreps, 123
+            write(1,*) nc2, 1, 0, nreps, myseed
         else
-            write(1,*) nc2, 1, 1, nreps, 123
+            write(1,*) nc2, 1, 1, nreps, myseed
         end if
         close(1)
 
@@ -556,7 +557,7 @@ PROGRAM MIXREGLS_subject
     write(3,*) "Level 2 obervations =",nc2
         !CALL SYSTEM("DEL mixREGLS52.OUT")
          ALLOCATE(tempVector(nc2))
-    200  FORMAT(A25,4F12.4)
+    200  FORMAT(1x,A25,4F12.4)
         WRITE(3,'("------------")')
          WRITE(3,'("Descriptives")')
          WRITE(3,'("------------")')
@@ -616,7 +617,7 @@ PROGRAM MIXREGLS_subject
             stdx=DSQRT(TEMP)
             WRITE(3,200) "Locat_1*Scale              ",meany,miny,maxy,stdy
         end if
-        write(3,*)
+
          close(3)
             write(mystr, '(I5)') nreps
 
@@ -2032,15 +2033,14 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                 WRITE(IUN,804) "Quad Location            ",tauhat, tauhatlow, tauhatup
             end if
         end if
-        if(nors .ne. 1) then
-            write(iun,*)
-            WRITE(IUN,'("Random scale standard deviation")')
-            L2=P+R+S+ns
-            tauhat = exp(spar(ns))
-            tauhatlow = exp(spar(ns)-myz*se(l2))
-            tauhatup = exp(spar(ns)+myz*se(l2))
-            WRITE(IUN,804)'Std Dev                  ',tauhat, tauhatlow, tauhatup
-        end if         
+    write(iun,*)
+        WRITE(IUN,'("Random scale standard deviation")')
+        L2=P+R+S+ns
+        tauhat = exp(spar(ns))
+        tauhatlow = exp(spar(ns)-myz*se(l2))
+        tauhatup = exp(spar(ns)+myz*se(l2))
+        WRITE(IUN,804)'Std Dev                  ',tauhat, tauhatlow, tauhatup
+         
            
          CLOSE(IUN)
          CLOSE(IUNS)
@@ -2051,26 +2051,9 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
     open(23,file=trim(fileprefix)//"_ebvar.dat")
     k=myqdim*(myqdim+1)/2
     DO I=1,NC2  ! go over level-2 clusters
-        write(23,'(20F15.8)') (THETAs(I,j), j=1,myqdim), (thetavs(i,j), j=1,k)
+        write(23,'(i16,20F15.8)') idni(i,1),(THETAs(I,j), j=1,myqdim), (thetavs(i,j), j=1,k)
     end do
     close(23)
-!    open(29,file=trim(fileprefix)//"_mvinfo.dat")
-!    write(29,*) nobs, maxk, nc2, 2, 1, ns
-!    write(29,*) (spar(j),j=1,ns)
-!    nob = 0
-!    do i=1,nc2
-!        write(29,*) idni(i,2), h(i)
-!        do j=1,IDNI(I,2)  ! loop over level-1 observations
-!           nob=nob+1 
-!                            XB = DOT_PRODUCT(BETA,X(NOB,:))        ! X BETA for the current LEVEL-1 obs
-!                            UA = DOT_PRODUCT(ALPHA,U(NOB,:))       ! U ALPHA for the current LEVEL-1 obs
-!                            WT = DOT_PRODUCT(TAU(1:S),W(NOB,1:S))  ! W TAU for the current LEVEL-1 obs
-!                                                                   ! note that S changes over CYCLES
-!            write(29,*) y(nob)-xb, exp(.5*ua), wt
-!        end do
-!    end do
-!    close(29)
-
         deallocate(weightsR1,pointsR1,weightsR0,pointsR0,myweights,mypoints)
         deallocate(bder2,abder2,ader2,der2a,der2b,der,derp,derp2,derq,derq2,derqq,dz,derps,tader2, &
                     tbder2,tbader2,tder2,dz2,sbder2,sader2,stder2,sbader2,sbatder2,sder2)

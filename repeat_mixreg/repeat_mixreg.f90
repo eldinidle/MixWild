@@ -4,7 +4,7 @@ PROGRAM repeat_mixreg
                 nvar2,pfixed,ptheta,pomega,pto,k,nvar3,diffk,&
                 nsubj,ndatasets,nreps,n,discard,ns
     INTEGER,ALLOCATABLE :: var2IND(:),ids(:),idni(:,:)
-    REAL(KIND=8) :: zval,pval,phifn,logl,loglsd,cutoff
+    REAL(KIND=8) :: zval,pval,phifn,logl,loglsd,cutoff,seval
     REAL(KIND=8),ALLOCATABLE:: tempsums(:,:),temp3(:),&
                                 betas(:,:),meanbetas(:),totalvarhats(:),varbetas(:),&
                                thetatemp(:),thetas(:,:),tempdata(:),liks(:)
@@ -107,7 +107,7 @@ PROGRAM repeat_mixreg
     open(5*nreps+6,file=fileeb)
     read(5*nreps+6,*) nsubj,r,ns,ndatasets
     numRE = r+ns
-    nvar3 = 4+R+pfixed+pomega+R*ptheta+pto
+    nvar3 = 4+R+pfixed+pomega+R*ptheta+(pto+1)*R
     write(*,*) nsubj,nvar2,nvar3
     allocate(thetatemp(nsubj*numRE))
     allocate(thetas(nsubj,numRE))
@@ -137,9 +137,16 @@ PROGRAM repeat_mixreg
         intlabel(1+pfixed+1+(1+Ptheta)*R+1) = "Scale                 "
         if(pOmega > 0) intlabel(1+pfixed+1+(1+Ptheta)*R+2:1+pfixed+1+(1+Ptheta)*R+1+pomega) = &
             "Scale*"//var2label(1+pfixed+ptheta+1:1+pfixed+ptheta+pomega)
-        if(pTO >= 0) intlabel(1+pfixed+1+(1+Ptheta)*R+1+pomega+1) = "Locat_1*Scale                    "
-        if(pTO >= 1) intlabel(1+pfixed+1+(1+Ptheta)*R+1+pomega+2:1+pfixed+1+(1+Ptheta)*R+1+pomega+pto) = &
-            "L*S*"//var2label(1+pfixed+ptheta+pomega+1:1+pfixed+ptheta+pomega+pto)
+        if(pTO >= 0) then
+            do j=1,R
+                write(mystr, '(A6, I1, A17)') "Locat_",j,"*Scale                 "
+                intlabel(1+pfixed+1+(1+Ptheta)*R+1+pomega+(j-1)*(pto+1)+1) = mystr
+                do k=1, pto
+                    write(mystr, '(A6, I1, A17)') "Locat_",j,"*S*"//trim(var2label(1+pfixed+ptheta+pomega+k))
+                    intlabel(1+pfixed+1+(1+Ptheta)*R+1+pomega+(j-1)*R+1+k) = mystr
+                end do
+            end do
+        end if
         intLabel(nvar3+1) = "Residual_Variance"
         
         filetempdat = trim(fileprefix) // "_.dat"
@@ -218,14 +225,17 @@ PROGRAM repeat_mixreg
                     k = k + pomega
                 end if
             end if
-            if(pto .ge. 0) then
-                tempdata(k+diffk+1) = thetas(i,1)*thetas(i,R+1)
-                diffk = diffk + 1
-                if(pto .ge. 1) then
-                    tempdata(k+diffk+1:k+diffk+pto) = thetas(i,1)*thetas(i,R+1)*tempsums(i,k+1:k+pto)
+                if(pto .ge. 0) then
+                    do j=1,R
+                        tempdata(k+diffk+1) = thetas(i,j)*thetas(i,R+1)
+                        diffk = diffk + 1
+                        if(pto .ge. 1) then
+                            tempdata(k+diffk+1:k+diffk+pto) = tempdata(k+diffk+1)*tempsums(i,k+1:k+pto)
+                            if(j .ne. R) diffk = diffk + ptheta
+                        end if
+                    end do
                     k = k + pto
                 end if
-            end if
             write(n*5,'(i16,25e15.6)') idni(i,1),(tempdata(k),k=1,nvar3)
         end do
         close(n*5)
@@ -289,7 +299,8 @@ PROGRAM repeat_mixreg
             varbetas(j) = varbetas(j) + (betas(i,j)-meanbetas(j))**2
         end do
         varbetas(j) = varbetas(j) / (nreps - 1)
-        ZVAL = meanbetas(j)/sqrt(totalvarhats(j)+varbetas(j))
+        seval = sqrt(totalvarhats(j)+(1+1/nreps)*varbetas(j))
+        ZVAL = meanbetas(j)/seval
         PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL)))
         !write(*,'(A16,4(4x,F10.4))') intlabel(j+1), meanbetas(j), sqrt(totalvarhats(j)+varbetas(j)),zval,pval
         if(j .eq. nvar3) write(2,*)

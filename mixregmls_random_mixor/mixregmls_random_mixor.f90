@@ -15,7 +15,7 @@ PROGRAM MIXREGmLS_subject
     implicit none
     INTEGER :: I,NOBS,NVAR,NQ,AQUAD,ID2IND,YIND,P,R,S,PP,RR,rr1,SS,MISS,MAXK,NC2,&
                 MAXIT,NCENT,PNINT,RNINT,SNINT,POLD,ROLD,SOLD,myio,j,iun,npar,&
-                counter,nvar2,pfixed,ptheta,pomega,pto,k,nvar3,maxj,&
+                counter,nvar2,pfixed,ptheta,pomega,pto,k,nvar3,maxj,myseed,&
                 pv,rv,sv,nv,ll,ko,h,kv,ncov,nreps,nors,discard0,no2nd,num0
     INTEGER,ALLOCATABLE :: XIND(:),UIND(:),WIND(:),IDNI(:,:),var2IND(:),icode(:),&
                             varIND(:),ids(:)
@@ -54,11 +54,12 @@ PROGRAM MIXREGmLS_subject
    IF (conv > .9 .or. fp_equal(conv,0d0)) THEN
         BACKSPACE 1
         READ(1,*) NVAR, P, R, S, PNINT, RNINT,SNINT,pv,rv,sv,CONV,NQ,AQUAD,MAXIT,yMISS,NCENT,ncov,RIDGEIN,&
-        nreps,cutoff,nors,no2nd,discard0
+        nreps,cutoff,nors,no2nd,discard0,myseed
         longdef = .true.
     else
         BACKSPACE 1
-        READ(1,*) NVAR, P, R, S, PNINT, RNINT,SNINT,CONV,NQ,AQUAD,MAXIT,yMISS,NCENT,ncov,RIDGEIN,nreps,cutoff,nors,no2nd,discard0
+        READ(1,*) NVAR, P, R, S, PNINT, RNINT,SNINT,CONV,NQ,AQUAD,MAXIT,yMISS,NCENT,ncov,RIDGEIN,nreps,cutoff,&
+            nors,no2nd,discard0,myseed
    ENDIF
 
     ! set SNINT=0 (for the error variance) if SNINT=1 AND S=0
@@ -164,7 +165,7 @@ PROGRAM MIXREGmLS_subject
             nors = 1
         end if
         nvar2 = 1+max(pfixed,0)+max(pomega,0)+max(ptheta,0)+max(pto,0)
-        nvar3 = 4+R+pfixed+pomega+R*ptheta+pto
+        nvar3 = 4+R+pfixed+pomega+R*ptheta+(pto+1)*R
         allocate(var2ind(nvar2))
         allocate(var2label(nvar2))
         read(1,*) var2ind(1)
@@ -215,11 +216,11 @@ PROGRAM MIXREGmLS_subject
     WRITE(1,5)FILEprefix
 !    WRITE(1,5)FILEDEF
     if(longdef) then
-        WRITE(1,'(10I3,E10.1E3, i4, i2, i5, f12.3, 2i2, f6.3, i5, f10.3, 3i2)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
-                    pv,rv,sv, CONV, NQ, AQUAD, MAXIT, yMISS, NCENT, ncov, ridgein,nreps,cutoff,nors,no2nd,discard0
+        WRITE(1,'(10I3,E10.1E3, i4, i2, i5, f12.3, 2i2, f6.3, i5, f10.3, 4i2)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
+                    pv,rv,sv, CONV, NQ, AQUAD, MAXIT, yMISS, NCENT, ncov, ridgein,nreps,cutoff,nors,no2nd,discard0,myseed
     else
-        WRITE(1,'(7I3,E10.1E3, i4, i2, i5, f12.3, 2i2, f6.3, i5, f10.3, 3i2)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
-                    CONV, NQ, AQUAD, MAXIT, yMISS, NCENT, ncov, ridgein,nreps,cutoff,nors,no2nd,discard0
+        WRITE(1,'(7I3,E10.1E3, i4, i2, i5, f12.3, 2i2, f6.3, i5, f10.3, 4i2)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
+                    CONV, NQ, AQUAD, MAXIT, yMISS, NCENT, ncov, ridgein,nreps,cutoff,nors,no2nd,discard0,myseed
     end if
     WRITE(1,'(20I3)') ID2IND, YIND
     IF (P .GE. 1) THEN
@@ -583,7 +584,7 @@ v = mychol
      call system("mkdir work")
      call system("move mixregmls_.* work")
 #else
-    FILEOUT2 = "cat MIXREGmLS1.OUT MIXREGmLS3.OUT MIXREGmLS2.OUT >> " // FILEOUT
+    FILEOUT2 = "cat MIXREGmLS1.OUT+MIXREGmLS3.OUT MIXREGmLS2.OUT >> " // FILEOUT
     CALL SYSTEM(FILEOUT2)
     CALL SYSTEM("rm mixREGmLS1.OUT mixregmls3.out mixregmls2.out")
     call system("mkdir work")
@@ -620,9 +621,9 @@ v = mychol
         write(1,*) trim(fileprefix)//'_ebvar.dat'
         write(1,*) trim(fileprefix)//'_ebrandom.dat'
         if(nors .ne. 0) then
-            write(1,*) nc2, r, 0, nreps, 123
+            write(1,*) nc2, r, 0, nreps, myseed
         else
-            write(1,*) nc2, r, 1, nreps, 123
+            write(1,*) nc2, r, 1, nreps, myseed
         end if
         close(1)
 
@@ -685,7 +686,7 @@ v = mychol
         
         open(3, file=trim(fileprefix)//'_desc2.out')
          ALLOCATE(tempVector(nc2))
-    200  FORMAT(A25,4F12.4)
+    200  FORMAT(1x,A25,4F12.4)
     write(3,9) head
     write(3,*)
     write(3,*) "Level 2 obervations =",nc2
@@ -738,13 +739,16 @@ v = mychol
             if(j .le. R .or. (j .eq. R+1 .and. nors .ne. 1)) WRITE(3,200) mystr,meany,miny,maxy,stdy
         end do
         if(pto >= 0) then
-            meany=sum(thetas(:,1)*thetas(:,R+1))/dble(nc2)
-            miny=minval(thetas(:,1)*thetas(:,R+1))
-            maxy=maxval(thetas(:,1)*thetas(:,R+1))
-            tempVector(:)=(thetas(:,1)*thetas(:,R+1)-meany)**2
-            TEMP=SUM(tempVector)/DBLE(nc2-1)
-            stdx=DSQRT(TEMP)
-            WRITE(3,200) "Locat_1*Scale              ",meany,miny,maxy,stdy
+            do j=1,R
+                meany=sum(thetas(:,j)*thetas(:,R+1))/dble(nc2)
+                miny=minval(thetas(:,j)*thetas(:,R+1))
+                maxy=maxval(thetas(:,j)*thetas(:,R+1))
+                tempVector(:)=(thetas(:,j)*thetas(:,R+1)-meany)**2
+                TEMP=SUM(tempVector)/DBLE(nc2-1)
+                stdx=DSQRT(TEMP)
+                write(mystr, '(A6, I1, A17)') "Locat_",j,"*Scale                 "
+                WRITE(3,200) mystr,meany,miny,maxy,stdy
+            end do
         end if
          WRITE(3,*)
          WRITE(3,*)
@@ -1963,11 +1967,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
                        SE(k)=DSQRT(DABS(DER2B(LL)))
                     END DO
                  END IF
-             do k=1,npar
-                 if(corec(k) > 1) corec(k) = 1
-                 if(corec(k) < -1) corec(k) = -1
-            end do
-            if(iter<=5) corec = corec*.5
+                if(iter<=10) corec = corec*.5
 
                 write(IUNS,*)"Corrections"
                 write(IUNS,*) (corec(k), k=1,npar)
@@ -2007,11 +2007,13 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
 
                  ! UPDATE PARAMETERS
                  BETA  = BETA  + COREC(1:P)
-                 if(iter >= 20) then
-                    mychol = mychol + COREC(P+1:P+RR)*.5
+                 if(iter >= 10) then
+                    mychol = mychol + COREC(P+1:P+RR)
+                    !spar(ns) = spar(ns) + corec(npar)
                 end if
-                if(ns > 1) spar(1:ns-1) = spar(1:ns-1) + corec(npar-ns+1:npar-1)*.5
-                if(ns > 0 .and. iter > 5) spar(ns) = spar(ns) + corec(npar)*.5
+                do k=1,ns
+                    spar(k) = spar(k) + corec(npar-ns+k)
+                end do
                  IF (S==1) THEN 
                      TAU(1)= TAU(1)   + COREC(P+RR+1)
                  ELSE IF (S>1) THEN
@@ -2194,8 +2196,8 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
         WRITE(IUN,804)TLAB(k),tauhat, tauhatlow, tauhatup
      END DO
     write(iun,*)
-    if(nors .ne. 1 .and. ns > 0) then
-        if(ns > 1) WRITE(IUN,'("Random (location) Effect(s)")')
+    if(ns > 0) then
+        WRITE(IUN,'("Random (location) Effect(s)")')
         do k=1,ns-1
             L2=P+RR+S+k
             tauhat = exp(spar(k))
@@ -2203,7 +2205,7 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
             tauhatup = exp(spar(k)+myz*se(l2))
             WRITE(IUN,804)ALAB(k),tauhat, tauhatlow, tauhatup
         end do
-            write(iun,*)
+        write(iun,*)
             WRITE(IUN,'("Random scale standard deviation")')
             L2=P+RR+S+ns
             tauhat = exp(spar(ns))
@@ -2221,28 +2223,9 @@ SUBROUTINE READAT(FILEDAT,NC2,NOBS,MAXK,NVAR,R,P,S,nv,nvar2,Y,X,U,W,var,varavg,t
     open(23,file=trim(fileprefix)//"_ebvar.dat")
     k=myqdim*(myqdim+1)/2
     DO I=1,NC2  ! go over level-2 clusters
-        write(23,'(20F15.8)') (THETAs(I,j), j=1,myqdim), (thetavs(i,j), j=1,k)
+        write(23,'(i16,20F15.8)') idni(i,1),(THETAs(I,j), j=1,myqdim), (thetavs(i,j), j=1,k)
     end do
     close(23)
-!    allocate(temploc(r))
-!    open(29,file=trim(fileprefix)//"_mvinfo.dat")
-!    write(29,*) nobs, maxk, nc2, myqdim, r, ns
-!    write(29,*) (spar(j),j=1,ns)
-!    nob = 0
-!    do i=1,nc2
-!       write(29,*) idni(i,2), h(i)
-!        do j=1,IDNI(I,2)  ! loop over level-1 observations
-!           nob=nob+1 
-!                            XB = DOT_PRODUCT(BETA,X(NOB,:))        ! X BETA for the current LEVEL-1 obs
-!                            WT = DOT_PRODUCT(TAU(1:S),W(NOB,1:S))  ! W TAU for the current LEVEL-1 obs
-                                                                   ! note that S changes over CYCLES
-           !Does not correctly handle more than 2 location random effects
-!            temploc(1) = mychol(1)*u(nob,1)
-!            if(r > 1) temploc(2) = u(nob,1)*mychol(2)+u(nob,2)*mychol(3)
-!            write(29,*) y(nob)-xb, (temploc(k),k=1,r), wt
-!        end do
-!    end do
-!    close(29)
 
         deallocate(weightsR1,pointsR1,weightsR0,pointsR0,myweights,mypoints)
         deallocate(bder2,abder2,ader2,der2a,der2b,der,derp,derp2,derq,derq2,derqq,dz,derps,tader2, &
