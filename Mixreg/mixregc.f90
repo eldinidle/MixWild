@@ -55,7 +55,6 @@ IMPLICIT NONE
    INTEGER ,POINTER ::IDNI(:)
    
    CHARACTER (LEN=4), ALLOCATABLE :: IXLAB(:)
-   CHARACTER(LEN=4) :: HEAD(36)
    
    CHARACTER (LEN=16), ALLOCATABLE :: IALABEL(:), IBLABEL(:)
    
@@ -94,6 +93,8 @@ IMPLICIT NONE
    REAL (KIND=8), ALLOCATABLE, TARGET :: IAL1EM(:), IAL2EM(:), &
       IALM1IN(:), IALMUIN(:), IAUTOEM(:), IAUTOEM2(:), &
       IAUTVIN(:) 
+      
+      CHARACTER*80   head,head2
    
    CHARACTER, PARAMETER:: PROGNAME*6 = 'MIXREG'
      
@@ -177,8 +178,8 @@ IMPLICIT NONE
    ! AND THEN PARAMETERS AND STARTING VALUES FROM RRM.DEF
 
    OPEN(1,ACTION='READ', FILE=FILENAMES(1))
-    READ(1,9) HEAD
- 9  FORMAT(18A4)
+   READ(1,*) HEAD
+   READ(1,*) HEAD2
    READ(1,"(A80)")FILEDAT
    READ(1,"(A80)")FILEOUT
    READ(1,"(80X)")         ! Skip over the DEF file name
@@ -194,6 +195,7 @@ IMPLICIT NONE
    ! new style have 15.  Count the number of params
    ! on the line and read them, so we can accept either style.
    READ(1,"(A80)") Line7
+   write(*,*) line7
    BACKSPACE(1)
    IF (NumericInputCount(Line7) > 12) THEN
       READ(1,*) NPR,NEM,MAXCOL,R,P,CONV, &
@@ -202,6 +204,9 @@ IMPLICIT NONE
    ELSE
       READ(1,*) NPR,NEM,MAXCOL,R,P,CONV, &
       MISS,ISTART,MEANYX,IFIN,IRES,NAUTO
+      nomu=0
+      nocov=0
+      ncon=0
    END IF
    
    ! for the time being use the unparameterized solution if
@@ -239,11 +244,11 @@ IMPLICIT NONE
 
 
    ! ALLOCATE R VECTORS
-
+if(r > 0) then
    ALLOCATE (IWORKR(R))
    ALLOCATE (IXMISS(R))
    ALLOCATE (IXIND(R))
-
+end if
    ! ALLOCATE rr = (r * (r+1)) / 2  (unless nocov=1)
 
    IF (NOCOV .EQ. 0) THEN
@@ -335,6 +340,7 @@ IMPLICIT NONE
                ICX  = IC2
                NCATYX = IC2 + R + 1
                CATJ = .FALSE.
+            ELSE
             ENDIF
          ELSE
             WRITE(6,*)'XCIND does not match XIND or WIND'
@@ -343,24 +349,26 @@ IMPLICIT NONE
          ENDIF
       END DO
 
+   ELSE
    ENDIF
 
    IF (MISS .EQ. 1 .or. miss .eq. 2) THEN
       READ(1,*) YMISS
       IF (R .GE. 1) READ(1,*) (IXMISS(H), H=1,R)
       IF (P .GE. 1) READ(1,*) (IWMISS(L), L=1,P)
+   ELSE
    ENDIF
 
    READ(1,*) YLabel
    IF (YLABEL .EQ. '        ') READ(1,*) YLABEL
 
-   IF (R .NE. 0) THEN
+   IF (R > 0) THEN
       READ(1,*) (IBLABEL(H), H=1,R)
       IF (IBLABEL(1) .EQ. '                ') READ(1,*) (IBLABEL(H), H=1,R)
       IF (ISTART .EQ. 1 .AND. NOMU .EQ. 0) READ(1,*) (IMU(H), H=1,R)
    ENDIF
    
-   IF (p .NE. 0) THEN
+   IF (p > 0) THEN
       ! reads 8-character labels for covariates from 
       ! a maximum of 2 lines
       READ(1,*) (IALABEL(L), L=1,P)
@@ -373,9 +381,10 @@ IMPLICIT NONE
    IF (MEANYX .EQ. 1) THEN
       IF (ICXW .EQ. 1) XLabel = IBLABEL(ICX)
       IF (ICXW .EQ. 2) XLabel = IALABEL(ICX)
+   ELSE
    ENDIF
 
-   IF (R .NE. 0) THEN
+   IF (R > 0) THEN
       IF (ISTART .EQ. 1) READ(1,*) (IVARCO(HR), HR=1,RR)
    ENDIF
    
@@ -409,7 +418,7 @@ IMPLICIT NONE
          AUTOLAB = 'ARMA(1,1)'
       ELSEIF (NS .EQ. 4 .OR. NS .EQ. 5) THEN
         write(AUTOLAB, '(a10, i1, a1)') 'Toeplitz(', S, ')' 
-      ENDIF
+       ENDIF
 
       ! itvec indicates which matrix contains the time vector
       !    0 = X   1 = W
@@ -599,6 +608,7 @@ IMPLICIT NONE
          KIN1 = K4
          ICATFQX(KIN1) = ICATFQX(KIN1) / ICATFQX(KIN3)
       END DO
+   ELSE
    ENDIF  
 
    ! use IWORKNF() and IWRKNF() as work vectors (nf = p + r)
@@ -617,6 +627,7 @@ IMPLICIT NONE
             IWNFNF(IC) = 0.0D0
          END DO
       END DO
+   ELSE
    ENDIF
        
    ! get the sums of squared deviations about the means
@@ -636,6 +647,7 @@ IMPLICIT NONE
       IF (IR .EQ. 1) THEN
          YVAL  = ALLDAT(K) 
          IF (ISTART .EQ. 0) YVAL2 = YVAL2 + YVAL*YVAL
+      ELSE
       ENDIF
 
       ! IF (IR .GT. 1 .AND. ISTART .EQ. 0) THEN
@@ -652,7 +664,9 @@ IMPLICIT NONE
             DO L = 1,NF
                IWRKNF(L) = IWRKNF(L) +(YVAL * IWORKNF(L))
             END DO
+         ELSE
          ENDIF
+      ELSE 
       ENDIF
 
       ! for one of the Xs or Ws get the sum of square deviations by Y
@@ -670,8 +684,10 @@ IMPLICIT NONE
                ICATFQX(KIN2)=ICATFQX(KIN2)+ &
                                   ((YVAL-ICATFQX(KIN1))**2)
                CATJ = .FALSE.
+            ELSE
             ENDIF
          END DO
+      ELSE
       ENDIF
 
    END DO
@@ -696,6 +712,7 @@ IMPLICIT NONE
          KIN3 = (2*MAXXJ) + K4
          ICATFQX(KIN2) = DSQRT(ICATFQX(KIN2)/ (ICATFQX(KIN3) - 1.0D0))
       END DO
+   ELSE
    ENDIF
 
    ! write out descriptive statistics
@@ -710,9 +727,11 @@ IMPLICIT NONE
       WRITE(2,5556)AUTOLAB,(IAUTO(IS),IS=1,S)
       5556 FORMAT(1X,'Autocorrelated error structure: ',A20,/,1X,'==> specified value(s) = ',10F6.3)
       WRITE(2,*)
+   ELSE
    ENDIF
     
-   WRITE(2,9) HEAD
+   WRITE(2,*) HEAD
+   WRITE(2,*) HEAD2
 
    WRITE(2,255)
    255 FORMAT(//,1x,'Numbers of observations',/,1x,'-----------------------',/)
@@ -724,6 +743,7 @@ IMPLICIT NONE
       WRITE(2,561)(IDNI(I),I=2,N*2,2)
       5610 FORMAT(//,1x,'The number of level 1 observations per level 2 unit  are:',/)
       561 FORMAT(1x,19I4)
+   ELSE
    ENDIF     
 
    WRITE(2,257)
@@ -754,6 +774,7 @@ IMPLICIT NONE
             ALLDAT(IC2),ALLDAT(IC3),ALLDAT(IC4)
       END DO
       WRITE(2,*) '    '
+   ELSE 
    ENDIF
    
    IF (P .GE. 1) THEN
@@ -767,6 +788,7 @@ IMPLICIT NONE
          WRITE(2,377)IALABEL(L),ALLDAT(IC), &
             ALLDAT(IC2),ALLDAT(IC3),ALLDAT(IC4)
       END DO
+   ELSE 
    ENDIF
 
    377 FORMAT(1x,A16,4(5X,F12.5))
@@ -787,6 +809,7 @@ IMPLICIT NONE
          (ICATFQX(H),H=J,MAXJXJ2,MAXXJ),INT(ICATFQX(J+MAXJXJ2))
          373 FORMAT(/,1X,F8.3,2(5x,F12.5),5x,i6)
       END DO
+   ELSE
    ENDIF
 
    ! done writing out descriptives, get starting values
@@ -806,6 +829,7 @@ IMPLICIT NONE
          DO H = 1,R
             IMU(H) = IWORKNF(H) 
          END DO
+      ELSE 
       ENDIF
       
       IF (P .GT. 0) THEN
@@ -813,6 +837,7 @@ IMPLICIT NONE
             L2 = L+R*(1-NOMU)
             IALPHA(L) =  IWORKNF(L2) 
          END DO
+      ELSE 
       ENDIF
  
       CALL INVS(IWNFNF,NF,DET,IWRKNF)
@@ -868,7 +893,7 @@ IMPLICIT NONE
       603 FORMAT(1x,'mean      ',7F16.4)
       ALLOCATE(IMU0(R))
       CALL RELOC(IMU,IMU0,R,1,0)
-   ENDIF
+    ENDIF
    
    IF (P .GT. 0) THEN
       WRITE(2,604) (IALPHA(L),L=1,P)
@@ -903,11 +928,11 @@ IMPLICIT NONE
    ND  = 0
 
    ! ALLOCATE  IVARPI and IVARD of size R
-   
+   if(r > 0) then
    IF (NOMU .EQ. 0) ALLOCATE(IMUEMGR(R))
    ALLOCATE(IVARPI(R))
    ALLOCATE(IVARD(R))
-   
+end if   
    ! ALLOCATE  RR
 
    ALLOCATE(IWORKRR(RRA))
@@ -922,11 +947,12 @@ IMPLICIT NONE
    ! ALLOCATE R2 = r * r
 
    R2   = R * R
+if(r2 > 0) then
    ALLOCATE(IVARCSQ(R2))
    ALLOCATE(IVARLSQ(R2))
    ALLOCATE(IVARGR(R2))
    ALLOCATE(IWORKR2(R2))
-
+end if
    ! ALLOCATE  (rr * (rr+1)) / 2   where  rr = (r * (r+1)) / 2
 
    RRU  = (RR * (RR+1)) / 2
@@ -1077,7 +1103,7 @@ IMPLICIT NONE
       CALL TRANDI(ITRANH,R,RR2)
       CALL TRANNN(ITRANN,R,R2,R2R2,IWORKRR,IWORKR2,IW3)
       CALL TRANGG(ITRANG,R,RRR2,R2R2,ITRANN)
-   ENDIF
+    ENDIF
 
    ! Set up scalars for the big iteration loop
    BIGCOR  = 999.0D0
@@ -1093,7 +1119,7 @@ IMPLICIT NONE
    
    ! Get rid of init-only allocated arrays
    IF (ALLOCATED(CODEX)) DEALLOCATE(CODEX)
-   DEALLOCATE( IXMISS, ICATFQX, IWMISS, IWIND) 
+!   DEALLOCATE( IXMISS, ICATFQX, IWMISS, IWIND) !COMMITT!!!!!
    IF (ALLOCATED(IWNFNF)) DEALLOCATE(IWNFNF, IWORKNF, IWRKNF)
    
    INITIALIZED = 1
@@ -1287,7 +1313,8 @@ IMPLICIT NONE
             IF (ALLOCATED(IALM1IN)) DEALLOCATE(IALM1IN)
             ALLOCATE(IALM1IN(RP))
             IWOMX => IALMUIN
-          ENDIF
+         ELSE
+         ENDIF
          
          ! get ORIGINAL starting values
          
@@ -1442,7 +1469,7 @@ IMPLICIT NONE
             PHI  = IAUTO(1) / (DSQRT(1.0D0 - IAUTO(1)*IAUTO(1)))
             DPHI = 1.0D0 / ((1.0D0 + PHI*PHI) * (DSQRT(1.0D0 + PHI*PHI)))
          ENDIF
-      ENDIF
+       ENDIF
  
       ERRINV = 1.0D0 / ERROR
 
@@ -1608,7 +1635,7 @@ IMPLICIT NONE
                ALLOCATE(IOMEGAD0(NINS))
                ALLOCATE(IWRKNINS(NINS))
             ENDIF
-         ENDIF
+          ENDIF
    
          ! ALLOCATE   RNII = r * maxni
    
@@ -1682,11 +1709,11 @@ IMPLICIT NONE
                      IF ((HR .GT. (ITPOS-1)*NII)  &
                          .AND. (HR .LE. ITPOS*NII)) THEN
                          IXTI(K) = ALLDAT(IC2)
-                      ENDIF
-                  ENDIF
+                       ENDIF
+                   ENDIF
                END DO
             END DO
-         ENDIF
+          ENDIF
    
          ! THE W(K, L) MATRIX  K = 1 .. NI(I)  L = 1 .. P
    
@@ -1804,35 +1831,35 @@ IMPLICIT NONE
                I6,' observations nested within')
             
             CALL PRNT(IUN,IYI,NII,1,0,IXLAB,IXLAB,ND,HEAD,1,80,5,1,1, &
-                      "Dependent Variable Vector")
+                      60H Dependent Variable Vector                                  )
          
             IF (NAUTO .GT. 0) THEN
                CALL PRNT(IUN,IXTI,NII,1,0,IXLAB,IXLAB,ND,HEAD,1,80,5,1,1, &
-                      "Vector of Timepoints")
+                      60H Vector of Timepoints                                       )
             ENDIF
          
             IF (R .GT. 0) THEN
                CALL PRNT(IUN,IXI,NII,R,0,IXLAB,IXLAB,ND,HEAD,1,80,5,1,1, &
-                      "Random-effect Design Matrix")
+                      60H Random-effect Design Matrix                                )
             ENDIF
          
             IF (P .GT. 0) THEN
                CALL PRNT(IUN,IWI,NII,P,0,IXLAB,IXLAB,ND,HEAD,1,80,5,1,1, &
-                      "Covariate Matrix")
+                      60H Covariate Matrix                                           )
             ENDIF
          
             IF (NAUTO .GT. 0) THEN
                CALL PRNT(IUN,IOMEGA,NII,NII,1,IXLAB,IXLAB,ND,HEAD,1,80,7,1,1, &
-                      "Autocorrelation Matrix")
+                      60H Autocorrelation Matrix                                     )
             ENDIF
          
             IF (NAUTO .GT. 1) THEN
                IF (NS .LE. 2) THEN
                   CALL PRNT(IUN,IOMEGAD,NII,NII,1,IXLAB,IXLAB,ND,HEAD,1,80,7,1,1, &
-                      "OMEGA DERIVATIVE MATRIX w/ respect to AUTO")
+                      60H OMEGA DERIVATIVE MATRIX w/ respect to AUTO                 )
                ELSE
                   CALL PRNT(IUN,IOMEGAD,NINI,S,0,IXLAB,IXLAB,ND,HEAD,1,80,7,1,1, &
-                      "OMEGA DERIVATIVE MATRIX w/ respect to AUTO")
+                      60H OMEGA DERIVATIVE MATRIX w/ respect to AUTO                 )
                ENDIF
             ENDIF
          ENDIF
@@ -1843,9 +1870,9 @@ IMPLICIT NONE
          IF (IRBADN .EQ. 0 .AND. IT .EQ. IFS .AND. I .LE. NPR .AND.  &
               NAUTO .GT. 1 .AND. (NS .EQ. 1 .OR. NS .EQ. 2)) THEN
             CALL PRNT(IUN,IOMEGA,NII,NII,1,IXLAB,IXLAB,ND,HEAD,1,80,7,1,1, &
-                   "OMEGA MATRIX")
+                   60H OMEGA MATRIX                                               )
             CALL PRNT(IUN,IOMEGAD,NII,NII,1,IXLAB,IXLAB,ND,HEAD,1,80,7,1,1, &
-                   "OMEGA DERIVATIVE MATRIX w/ respect to AUTO           ")
+                   60H OMEGA DERIVATIVE MATRIX w/ respect to AUTO                 )
          ENDIF
    
    
@@ -2180,7 +2207,6 @@ IMPLICIT NONE
             !   IAUERIN() = VECTOR (S)     SUM FOR AUTOCORR x ERROR INFORMATION
             ! ********
     
-            ! WRITE(6,*)'line 1757 A-OK'
             IF (R .GT. 0) THEN
                IF (NOMU .EQ. 0) CALL ADDM(IMU1IN,IVARPO,IMU1IN,R,R,1)
                CALL MPYM(IXI,IVARPO,IXVARP,NII,R,0,1,R)
@@ -2212,9 +2238,9 @@ IMPLICIT NONE
                ENDIF
                 
                !  CALL PRNT(IUN,IVARCO,R,R,1,IXLAB,IXLAB,ND,HEAD,1,80,4,1,1, &
-               ! "BETA VARIANCE COVARIANCE MATRIX                          ")
+               ! 60H BETA VARIANCE COVARIANCE MATRIX                            )
                !  CALL PRNT(IUN,IVARPO,R,R,1,IXLAB,IXLAB,ND,HEAD,1,80,4,1,1, &
-               ! "POSTERIOR BETA VARIANCE COVARIANCE MATRIX                ")
+               ! 60H POSTERIOR BETA VARIANCE COVARIANCE MATRIX                  )
     
             ENDIF
     
@@ -2378,9 +2404,9 @@ IMPLICIT NONE
          CALL MPYM(IINFFIX,IGRAFIX,ICORFIX,NF,NF,1,0,1)
           
          ! CALL PRNT(2,IGRAFIX,NF,1,0,IXLAB,IXLAB,ND,HEAD,1,80,6,1,1, &
-         !    "Gradient of fixed terms                                  ")
+         !    60H Gradient of fixed terms                                    )
          ! CALL PRNT(2,IINFFIX,NF,NF,1,IXLAB,IXLAB,ND,HEAD,1,80,6,1,1, &
-         !    "Information matrix of fixed terms                        ")
+         !    60H Information matrix of fixed terms                          )
  
          IF (IFIN .LT. 2) THEN
  
@@ -2638,11 +2664,11 @@ IMPLICIT NONE
          ENDIF
 
          !  CALL PRNT(IUN,IVARCIN,RR,RR,1,IXLAB,IXLAB,ND,HEAD,1,80,6,1,1,
-         ! +"INFORMATION MATRIX OF BETA VARIANCE                      ")
+         ! +60H INFORMATION MATRIX OF BETA VARIANCE                        )
          !  CALL PRNT(IUN,IERVAIN,NERR,RR,0,IXLAB,IXLAB,ND,HEAD,1,80,6,1,1,
-         ! +"INFORMATION MATRIX OF ERROR * BETA VARIANCE              ")
+         ! +60H INFORMATION MATRIX OF ERROR * BETA VARIANCE                )
          !  CALL PRNT(IUN,IERRINF,NERR,NERR,1,IXLAB,IXLAB,ND,HEAD,1,80,6,1,1,
-         ! +"INFORMATION MATRIX OF ERROR VARIANCE (tau & auto)        ")
+         ! +60H INFORMATION MATRIX OF ERROR VARIANCE (tau & auto)          )
          !  WRITE(6,*)'line 2085 A-OK'
 
          IF (R .GT. 0) THEN
@@ -2658,9 +2684,9 @@ IMPLICIT NONE
          CALL MPYM(IINFVAR,IGRAVAR,ICORVAR,NV,NV,1,0,1)
 
          !  CALL PRNT(IUN,IGRAVAR,NV,1,0,IXLAB,IXLAB,ND,HEAD,1,80,6,1,1,
-         ! +"Gradient of variance terms                               ")
+         ! +60H Gradient of variance terms                                 )
          !  CALL PRNT(IUN,IINFVAR,NV,NV,1,IXLAB,IXLAB,ND,HEAD,1,80,6,1,1,
-         ! +"Information matrix of variance terms                     ")
+         ! +60H Information matrix of variance terms                       )
  
          IF(IFIN .NE. 0 .AND. IFIN .LT. 2) THEN
  
@@ -2707,7 +2733,7 @@ IMPLICIT NONE
             IF (NOCOV .EQ. 0) THEN           
  
                !  CALL PRNT(IUN,IVARL,R,R,3,IXLAB,IXLAB,ND,HEAD,1,80,6,1,1,
-               ! +"L MATRIX  (before improvement)                           ")
+               ! +60H L MATRIX  (before improvement)                             )
 
                L = 0
                DO IH = 1,R
@@ -2725,12 +2751,13 @@ IMPLICIT NONE
                         CORSUM = CORSUM + DABS(ICORVAR(IR))
                         ICSUM  = ICSUM  + 1
                         IVARL(L) = IVARL(L) + ICORVAR(IR)
+                     ELSE
                      ENDIF
                   END DO
                END DO
             
                !  CALL PRNT(IUN,IVARL,R,R,3,IXLAB,IXLAB,ND,HEAD,1,80,6,1,1,
-               ! +"L MATRIX  (after  improvement)                           ")
+               ! +60H L MATRIX  (after  improvement)                             )
  
             ENDIF
  
@@ -2776,11 +2803,11 @@ IMPLICIT NONE
             
             !  WRITE(6,*)'line 2223 A-OK'
             !  CALL PRNT(IUN,IVARL,R,R,3,IXLAB,IXLAB,ND,HEAD,1,80,6,1,1,
-            ! +"L MATRIX  (after  improvement)                           ")
+            ! +60H L MATRIX  (after  improvement)                             )
             !  CALL PRNT(IUN,IVARLSQ,R,R,0,IXLAB,IXLAB,ND,HEAD,1,80,6,1,1,
-            ! +"L MATRIX  (square)"  ")
+            ! +60H L MATRIX  (square)                                         )
             !  CALL PRNT(IUN,IVARD,R,R,2,IXLAB,IXLAB,ND,HEAD,1,80,6,1,1,
-            ! +"D MATRIX"            ")
+            ! +60H D MATRIX                                                   )
             !  WRITE(6,*)'line 2226 A-OK'
          
          ENDIF  !  IFIN .NE. 0 test
@@ -3129,7 +3156,7 @@ IMPLICIT NONE
       DO J = 1,I
          IC = IC + 1
          IF (I .EQ. J) THEN
-            ISEVAR(I) = DSQRT(IINFVAR(IC))
+            ISEVAR(I) = DSQRT(abs(IINFVAR(IC)))
             IZVAR(I)  = IZVAR(I) / ISEVAR(I)
             IPVAR(I) = 2.0D0 *(1.0D0 - PHIFN(DABS(IZVAR(I)),0))
          ENDIF
@@ -3220,7 +3247,7 @@ IMPLICIT NONE
 
       CALL MPDSD(IWORKR,IVARCO,IVARCO,R)
       CALL PRNT(2,IVARCO,R,R,1,IBLABEL,IBLABEL,ND,BLANK,1,78,5,2,2, &
-         "Random-effect covariances expressed as correlations      ")
+         60H Random-effect covariances expressed as correlations        )
    ENDIF
 
    ! compute the contrasts of the parameter estimates
@@ -3247,7 +3274,7 @@ IMPLICIT NONE
 
    ! write out the estimates of the fixed effects 
 
-   IF (NF .GT. 1) THEN
+   IF (NF .Ge. 1) THEN
       ALLOCATE(IPARMLAB(NF))
 
       DO I = 1,NF
@@ -3261,7 +3288,7 @@ IMPLICIT NONE
          WRITE(3,704)IPARMLAB(I),IVAL(I)
          704 FORMAT(1X,a16,1x,F13.7)
       END DO
-if(r .eq. 0) write(3,704) "Residual",error
+!if(r .eq. 0) write(3,704) "Residual",error
       ALLOCATE(IINFSQ(NF*NF))
       CALL CHAMS(IINFFIX,IINFSQ,NF,1,0)
 
@@ -3269,17 +3296,16 @@ if(r .eq. 0) write(3,704) "Residual",error
          ILO = I                  
          IHI = ILO-1  + NF*NF            
          WRITE(4,705)(IINFSQ(I2),I2=ILO,IHI,NF)
-         705 FORMAT(1X,6F17.7)
+         705 FORMAT(1X,6g17.7)
       END DO
 
-if(r .eq. 0) write(4,705) iinfvar((rr+1)*(rr+2)/2)
 
       CALL MPDSD(ISEFIX,IINFFIX,IINFFIX,NF)
 !      CALL PRNT(2,IINFFIX,NF,NF,1,IPARMLAB,IPARMLAB,ND,BLANK,1,78,5,2,2, &
-!               "Correlation of the MML estimates of the fixed terms      ")
+!               60H Correlation of the MML estimates of the fixed terms        )
    ENDIF
 
-   IF (NV .GT. 1) THEN
+   IF (NV .Ge. 1) THEN
       ALLOCATE(IPARMLB(NV))
 
       DO I = 1,NV
@@ -3308,12 +3334,12 @@ if(r .eq. 0) write(4,705) iinfvar((rr+1)*(rr+2)/2)
          ILO = I                  
          IHI = ILO-1  + NV*NV            
          WRITE(4,707)(IINFSQ(I2),I2=ILO,IHI,NV)
-         707 FORMAT(1X,6F13.7)
+         707 FORMAT(1X,6g17.7)
       END DO
 
       CALL MPDSD(ISEVAR,IINFVAR,IINFVAR,NV)
       CALL PRNT(2,IINFVAR,NV,NV,1,IPARMLB,IPARMLB,ND,BLANK,1,78,5,2,2, &
-          "Correlation of the MML estimates of variance-related terms")
+          60H Correlation of the MML estimates of variance-related terms )
    ENDIF
 
    CLOSE(3)
@@ -3329,7 +3355,7 @@ if(r .eq. 0) write(4,705) iinfvar((rr+1)*(rr+2)/2)
               1x,'----------------------------------------------------------')
 
       CALL PRNT(2,ICON,NF,NCON,0,IPARMLAB,IXLAB,ND,BLANK,1,78,5,2,1, &
-         "Transpose of the Transform Matrix (parameters by transforms)")
+         60HTranspose of the Transform Matrix (parameters by transforms))
 
       WRITE(2,757)
       757 FORMAT(/,1X,'Transform',5x,'    Estimate',5X,'Stand. Error',5x, &
@@ -3347,7 +3373,7 @@ if(r .eq. 0) write(4,705) iinfvar((rr+1)*(rr+2)/2)
 
       CALL MPDSD(ICSE,ICDER2,ICDER2,NCON)
       CALL PRNT(2,ICDER2,NCON,NCON,1,IXLAB,IXLAB,ND,BLANK,1,78,5,1,1, &
-            "Correlation of the MML Transformed Estimates              ")
+            60HCorrelation of the MML Transformed Estimates                )
 
    ENDIF
 
@@ -3367,7 +3393,8 @@ if(r .eq. 0) write(4,705) iinfvar((rr+1)*(rr+2)/2)
    ! This is needed when we are operating as a DLL, where the 
    ! program never really 'ends'. 
    
-!   DEALLOCATE(ALLDAT, IDNI, IXLAB, IALABEL, IBLABEL, IXIND, IWORKP, IINFFIX)
+ !  DEALLOCATE(ALLDAT, IDNI, IXLAB, IALABEL, IBLABEL, IXIND, &      !COMMITT!!!!
+ !     IWORKP, IINFFIX)
    
    DEALLOCATE( IALPHA, ICON, IINFVAR, IVARCO, IGRAFIX, ICORFIX)
    
@@ -3383,10 +3410,11 @@ if(r .eq. 0) write(4,705) iinfvar((rr+1)*(rr+2)/2)
    IF (ALLOCATED(IMUIN)) DEALLOCATE(IMUIN)
    IF (ALLOCATED(IMU1IN)) DEALLOCATE(IMU1IN)
    
-!   DEALLOCATE(IVARPI, IVARD, IWORKR, IWORKRR, IVARCEM , IVARL, &
+!   DEALLOCATE(IVARPI, IVARD, IWORKR, IWORKRR, IVARCEM , IVARL, & !COMMIT!!!
 !      IERV1IN , IVARCON , IVARCOI , IVARCSQ , IVARLSQ, &
 !      IVARGR , IWORKR2 , IVARCIN , IVARCK , IVARIN , IW3, &
-!     ITRANN , ITRANJ , IVARLD , ITRANH , IWORKR3 , ITRANG, IW3G , IWORKPP )
+!      ITRANN , ITRANJ , IVARLD , ITRANH , IWORKR3 , ITRANG, &
+!      IW3G , IWORKPP )
    
    IF (ALLOCATED(IERVAIN)) DEALLOCATE( IERVAIN, IWKEC, IGRAVAR,  &
             ICORVAR, IERRINF, IWKER2) 

@@ -11,13 +11,249 @@ CONTAINS
 ! Helmert contrasts (IH=2)
 ! or repeated contrasts (IH=1)
 !  
-SUBROUTINE CONTRAST(IH,C,R,P,RR,NOMU,IPRIOR,NPAR,BIGH)
+! ************************************************
+! SUBROUTINE PHIFN
+! Calculate the probability distribution function (Intercept) for
+! various distributions:
+! NORMAL, LOGISTIC, Complementary Log-Log, OR Log-Log 
+!   = 0       = 1                    = 2          =3 
+! ************************************************
+REAL(kind=8) FUNCTION PHIFN(Z,nfn)
+    implicit none
+    real(kind=8),intent(in)::z
+    integer,intent(in)::nfn
+    real(kind=8)::z2,ord,e,g
+   
+   SELECT CASE (nfn)
+   
+   CASE (0)    ! Normal distribution
+     IF(Z.LT.-8.0D0) THEN
+        PHIFN=0.000000000000001D0
+     ELSEIF(Z.GT.8.0D0) THEN
+        PHIFN=0.999999999999999D0
+     ELSE
+        Z2 = 0.0D0 - ((Z*Z)/2.0D0)
+        ORD=DEXP(Z2)/2.506628275D0
+        E=1.0D0/(1.0D0+0.2316418D0*DABS(Z))
+        G=((((1.330274429D0*E-1.821255978D0)* &
+           E+1.781477937D0)*E-0.356563782D0)*E+0.319381530D0)*E
+        G=G*ORD
+        IF(Z.LE.0.0D0)PHIFN=G
+        IF(Z.GT.0.0D0)PHIFN=1.0D0-G
+     ENDIF
+     
+   CASE (1)    ! Logistic distribution
+     IF(Z.LT.-34.0D0) THEN
+        PHIFN=0.000000000000001D0
+        RETURN
+     ELSEIF(Z.GT. 34.0D0) THEN
+        PHIFN=0.999999999999999D0
+        RETURN
+     ELSE
+        PHIFN = 1.0D0 / ( 1.0D0 + DEXP(0.0D0 - Z))
+     ENDIF
+     
+   CASE (2)    ! Complementary Log-Log distribution
+     PHIFN = 1.0D0 - DEXP(0.0D0 - DEXP(Z))
+     
+   CASE (3)    ! Log-Log distribution
+     PHIFN = DEXP(0.0D0 - DEXP(Z))
+   END SELECT
+   
+END FUNCTION PHIFN
+
+! ************************************************
+! SUBROUTINE PHIY
+! Calculate the probability distribution function (ordinant) for
+! various distributions:
+! NORMAL, LOGISTIC, Complementary Log-Log, OR Log-Log 
+!   = 0       = 1                    = 2          =3 
+! ************************************************
+real(kind=8) FUNCTION PHIY(Z,nfn)
+    implicit none
+    real(kind=8),intent(in)::z
+    integer,intent(in)::nfn
+    real(kind=8)::fn,az
+   
+   SELECT CASE (nfn)
+   
+   CASE (0)    ! Normal distribution
+     AZ=Z*Z
+     IF(AZ.GT.360.0D0) THEN
+        PHIY=0.0D0
+   !       ELSEIF(Z.LT.-10.0D0) THEN
+   !          PHIY=0.0D0
+     ELSE
+        PHIY=(DEXP(-Z*Z/2.0D0))/2.506628275D0
+     ENDIF
+     
+   CASE (1)    ! Logistic distribution
+     FN    = 1.0D0 / ( 1.0D0 + DEXP(0.0D0 - Z))
+     PHIY  = FN * (1.0D0 - FN)
+     
+   CASE (2)    ! Complementary Log-Log distribution
+     FN    = 1.0D0 - DEXP(0.0D0 - DEXP(Z))
+     PHIY  = (FN - 1.0D0 ) * (0.0D0 - DEXP(Z))
+     
+   CASE (3)    ! Log-Log distribution
+     FN    = DEXP(0.0D0 - DEXP(Z))
+     PHIY  = FN * (0.0D0 - DEXP(Z))
+     
+   END SELECT
+   
+END FUNCTION PHIY
+
+! *****************************************************************
+!     FUNCTION FP_EQUAL(A,B)
+! *****************************************************************
+!     This short routine does a 'safe compare' between two floating
+!     point numbers.  This will get around the compiler message:
+! 
+! "Floating-point comparisons for equality may produce inconsistent results."
+! 
+!     which IS a LEGITIMATE message - it warns of a HIGH DEGREE of 
+!     susceptibility to floating point roundoff errors, which should
+!     be fixed!  For a quick introduction to the background, read 
+!     http://www.lahey.com/float.htm   Tony Gray 12/18/00
+! *****************************************************************
+LOGICAL FUNCTION FP_EQUAL(A,B)
+   DOUBLE PRECISION A,B, Epsilon
+   PARAMETER (EPSILON = .0000005) ! required closeness of comparands
+   IF (ABS(B - A) .LE. (ABS(B+A)*EPSILON)) THEN
+      FP_EQUAL = .True.
+   ELSE
+      FP_EQUAL = .False.
+   ENDIF
+   
+END FUNCTION FP_EQUAL
+
+   ! Standardize variables - in each column in which the STD is not 0
+SUBROUTINE STANDZ(XDAT,NR,NC,MEANX,STDX)
+    implicit none
+        REAL(KIND=8) :: XDAT(NR,NC),MEANX(NC),STDX(NC)
+        INTEGER :: NR,NC,I,J
+
+           do i=1,NR
+               do j=1,NC
+                  if (stdx(j) > 0.0d0) then 
+                      XDAT(i,j) = (XDAT(i,j) - meanx(j)) / stdx(j) 
+                  end if
+               end do
+           end do
+
+END SUBROUTINE STANDZ
+
+subroutine unique(IDs,n,ID)
+    implicit none
+    !
+    ! Purpose:
+    ! To sort and remove the duplicate ID numbers
+    !
+        INTEGER,INTENT(IN):: n
+        INTEGER,INTENT(IN),DIMENSION(n):: IDs
+        INTEGER,INTENT(OUT),DIMENSION(n)::ID
+        INTEGER:: i,j,k,n1,swap
+
+        ID(:)=0
+
+        !remove the duplicate ID
+        j=1
+        ID(j)=IDs(j)
+        do i=1,n
+              if (ID(j)==IDs(i)) then
+                 continue
+              else
+                 j=j+1
+                 ID(j)=IDs(i)
+              end if
+        end do
+
+        !sort the ID
+        n1=COUNT(ID>0)
+        do i=1,n1-1
+
+              !find the location of minimum value
+               k=i
+               do j=i+1,n1
+                  IF(ID(j)<ID(k)) THEN
+                    k=j
+                  END if
+               end do
+
+              !swap the minimum value
+              IF(i/=k) THEN
+                swap=ID(i)
+                ID(i)=ID(k)
+                ID(k)=swap
+              END if
+        end do
+
+end subroutine unique
+
+subroutine meanc(a,nobs,cols,m,s)
+    !
+    !purpose:
+    !to calculate the mean and std in each column
+    !
+        INTEGER,INTENT(IN)::nobs,cols               ! cols is the # of columns
+        REAL(KIND=8),INTENT(IN),DIMENSION(nobs,cols)::a   ! input matrix
+        REAL(KIND=8),INTENT(OUT),dimension(cols):: m,s ! m is mean vector,s is std vector
+        REAL(KIND=8),DIMENSION(nobs)::t             ! temporary array
+        INTEGER:: i
+
+        ! calculate mean
+        t(:)=0.
+        do i=1,cols
+            t(:)=a(:,i)
+            m(i)=SUM(t)/nobs
+        end do
+
+        ! calculate std
+        t(:)=0
+        do i=1,cols
+            t(:)=(a(:,i)-m(i))**2
+            s(i)=SQRT(SUM(t)/(nobs-1))
+        end do
+
+end subroutine meanc
+
+subroutine descripc(a,nobs,cols,m,s,minv,maxv)
+        !
+        !purpose:
+        !to calculate the mean, std, min, and max in each column
+        !
+        INTEGER,INTENT(IN)::nobs,cols                         ! cols is the # of columns
+        REAL(KIND=8),INTENT(IN),DIMENSION(nobs,cols)::a             ! input matrix
+        REAL(KIND=8),INTENT(OUT),dimension(cols):: m,s,minv,maxv ! m is mean vector,s is std vector
+        REAL(KIND=8),DIMENSION(nobs)::t                       ! temporary array
+        INTEGER:: i
+
+        ! calculate mean, min, max
+        t(:)=0.
+        do i=1,cols
+        t(:)=a(1:nobs,i)
+        m(i)=SUM(t)/nobs
+        minv(i)=minval(t)
+        maxv(i)=maxval(t)
+        end do
+
+        ! calculate std
+        t(:)=0
+        do i=1,cols
+        t(:)=(a(1:nobs,i)-m(i))**2
+        s(i)=SQRT(SUM(t)/(nobs-1))
+        end do
+
+end subroutine descripc
+
+SUBROUTINE CONTRAST(IH,C,R,P,NOMU,IPRIOR,NPAR,BIGH)
 !
    IMPLICIT REAL*8(A-H,O-Z),INTEGER*4(I-N)
    INTEGER C, R, NOMU, RR, P, NPAR, INMU, IND, J, J2, I, IPRIOR, IH, &
       JJ, JI, IJ, II, JIND
    REAL (KIND=8), ALLOCATABLE :: H(:), CONTR(:), ZPR(:),             &
       ZRRR(:), CONTP(:), ZRRP(:), CONTRR(:), BIGHH(:)
+   DOUBLE PRECISION BIGH
    DIMENSION BIGH(1)
 
 !  for three categories 
@@ -28,7 +264,8 @@ SUBROUTINE CONTRAST(IH,C,R,P,RR,NOMU,IPRIOR,NPAR,BIGH)
 !  1  0
 ! -1  1
 !  note: C = number of categories - 1
-!
+   !
+   RR = R * (R+1) / 2 
    ALLOCATE(H(C*C))
    IF (IH .EQ. 1) THEN
       IND = 0
@@ -216,92 +453,6 @@ REAL*8 FUNCTION GAMMAS(X)
    RETURN
    
 END FUNCTION GAMMAS
-
-! ************************************************
-! SUBROUTINE PHIFN
-! Calculate the probability distribution function (Intercept) for
-! various distributions:
-! NORMAL, LOGISTIC, Complementary Log-Log, OR Log-Log 
-!   = 0       = 1                    = 2          =3 
-! ************************************************
-REAL*8 FUNCTION PHIFN(Z,nfn)
-   IMPLICIT REAL*8(A-H,O-Z)
-   
-   SELECT CASE (nfn)
-   
-   CASE (0)    ! Normal distribution
-     IF(Z.LT.-8.0D0) THEN
-        PHIFN=0.000000000000001D0
-     ELSEIF(Z.GT.8.0D0) THEN
-        PHIFN=0.999999999999999D0
-     ELSE
-        Z2 = 0.0D0 - ((Z*Z)/2.0D0)
-        ORD=DEXP(Z2)/2.506628275D0
-        E=1.0D0/(1.0D0+0.2316418D0*DABS(Z))
-        G=((((1.330274429D0*E-1.821255978D0)* &
-           E+1.781477937D0)*E-0.356563782D0)*E+0.319381530D0)*E
-        G=G*ORD
-        IF(Z.LE.0.0D0)PHIFN=G
-        IF(Z.GT.0.0D0)PHIFN=1.0D0-G
-     ENDIF
-     
-   CASE (1)    ! Logistic distribution
-     IF(Z.LT.-34.0D0) THEN
-        PHIFN=0.000000000000001D0
-        RETURN
-     ELSEIF(Z.GT. 34.0D0) THEN
-        PHIFN=0.999999999999999D0
-        RETURN
-     ELSE
-        PHIFN = 1.0D0 / ( 1.0D0 + DEXP(0.0D0 - Z))
-     ENDIF
-     
-   CASE (2)    ! Complementary Log-Log distribution
-     PHIFN = 1.0D0 - DEXP(0.0D0 - DEXP(Z))
-     
-   CASE (3)    ! Log-Log distribution
-     PHIFN = DEXP(0.0D0 - DEXP(Z))
-   END SELECT
-   
-END FUNCTION PHIFN
-   
-! ************************************************
-! SUBROUTINE PHIY
-! Calculate the probability distribution function (ordinant) for
-! various distributions:
-! NORMAL, LOGISTIC, Complementary Log-Log, OR Log-Log 
-!   = 0       = 1                    = 2          =3 
-! ************************************************
-FUNCTION PHIY(Z,nfn)
-   IMPLICIT REAL*8(A-H,O-Z)
-   
-   SELECT CASE (nfn)
-   
-   CASE (0)    ! Normal distribution
-     AZ=Z*Z
-     IF(AZ.GT.360.0D0) THEN
-        PHIY=0.0D0
-   !       ELSEIF(Z.LT.-10.0D0) THEN
-   !          PHIY=0.0D0
-     ELSE
-        PHIY=(DEXP(-Z*Z/2.0D0))/2.506628275D0
-     ENDIF
-     
-   CASE (1)    ! Logistic distribution
-     FN    = 1.0D0 / ( 1.0D0 + DEXP(0.0D0 - Z))
-     PHIY  = FN * (1.0D0 - FN)
-     
-   CASE (2)    ! Complementary Log-Log distribution
-     FN    = 1.0D0 - DEXP(0.0D0 - DEXP(Z))
-     PHIY  = (FN - 1.0D0 ) * (0.0D0 - DEXP(Z))
-     
-   CASE (3)    ! Log-Log distribution
-     FN    = DEXP(0.0D0 - DEXP(Z))
-     PHIY  = FN * (0.0D0 - DEXP(Z))
-     
-   END SELECT
-   
-END FUNCTION PHIY
 
 ! ************************************************
 !                        **********************                         
@@ -785,8 +936,7 @@ END SUBROUTINE HRECUR
 ! ************************************************
 SUBROUTINE HERMIT(X,A,NN,EPSQ)
    IMPLICIT REAL*8(A-H,O-Z),INTEGER*4(I-N)
-   real(kind=8)::x(*), a(*)
-   !DIMENSION X(1),A(1)
+   DIMENSION X(1),A(1)
    DATA PI/3.141592654D0/
    
    FN=DBLE(NN)
@@ -1516,7 +1666,7 @@ END SUBROUTINE  MPYTR
 SUBROUTINE PRNT(LSTUN,B,NUMR,NUMC,MS,ROW,COL,ND, &
                    HEAD,IH,NCT,NSF,NR,NC,TITLE)
    REAL*8 B,BIG
-   CHARACTER::TITLE(*)
+   CHARACTER (len=*) TITLE
    CHARACTER*4 HEAD,TEMP,FMT,FORM,FLB,ROW,COL,BLANK,CH
    CHARACTER*40 NEWFMT,NEWFLB
    CHARACTER*36 NEWFORM
@@ -1616,7 +1766,7 @@ SUBROUTINE PRNT(LSTUN,B,NUMR,NUMC,MS,ROW,COL,ND, &
    IF(BIG.EQ.0.0D0) THEN
       MODE=1
    ELSE
-      MODE = int(DLOG10 (DABS (BIG)))
+      MODE = DLOG10 (DABS (BIG))
       MODE =MODE+1
    ENDIF
    
@@ -2358,7 +2508,7 @@ SUBROUTINE READAT(FILEDAT,N,NTOT,MAXK,MAXCOL,R,P,ALLDAT, &
    REAL (KIND = 8),POINTER ::ALLDAT(:)
    REAL*8  TEMP(MAXCOL),XTEMP(R),WTEMP(P),XMISS(R),WMISS(P)
    LOGICAL FIRST
-   CHARACTER(80)::FILEDAT
+   CHARACTER (len=*), INTENT(IN):: FILEDAT
 
    ! INITIALIZE 
    
@@ -2427,16 +2577,7 @@ SUBROUTINE READAT(FILEDAT,N,NTOT,MAXK,MAXCOL,R,P,ALLDAT, &
                MISSY = 1
             END IF
          END DO
-      ENDIF
-      IF (MISS .EQ. 2) THEN
-         IF (YTEMP .le. YMISS) MISSY = 1
-            
-         DO H = 1,R
-            IF (XTEMP(H) .le. XMISS(H)) MISSY = 1
-         END DO
-         DO L = 1,P
-            IF (WTEMP(L) .le. WMISS(L)) MISSY = 1
-         END DO
+      ELSE
       ENDIF
       IF (MISSY .NE. 0) THEN
          CYCLE  ! give up on current value and go read next one
@@ -2527,30 +2668,6 @@ SUBROUTINE READAT(FILEDAT,N,NTOT,MAXK,MAXCOL,R,P,ALLDAT, &
 END SUBROUTINE READAT
    
    
-! *****************************************************************
-!     FUNCTION FP_EQUAL(A,B)
-! *****************************************************************
-!     This short routine does a 'safe compare' between two floating
-!     point numbers.  This will get around the compiler message:
-! 
-! "Floating-point comparisons for equality may produce inconsistent results."
-! 
-!     which IS a LEGITIMATE message - it warns of a HIGH DEGREE of 
-!     susceptibility to floating point roundoff errors, which should
-!     be fixed!  For a quick introduction to the background, read 
-!     http://www.lahey.com/float.htm   Tony Gray 12/18/00
-! *****************************************************************
-LOGICAL FUNCTION FP_EQUAL(A,B)
-   DOUBLE PRECISION A,B, Epsilon
-   PARAMETER (EPSILON = .0000005) ! required closeness of comparands
-   IF (ABS(B - A) .LE. (ABS(B+A)*EPSILON)) THEN
-      FP_EQUAL = .True.
-   ELSE
-      FP_EQUAL = .False.
-   ENDIF
-   
-END FUNCTION FP_EQUAL
-
 ! *****************************************************************
 !   SUBROUTINTE QUADP (B,B1,A,NQ1,NQ,NDIM,IUNIF,WA1,WA2,sca) **  
 !                                                         
@@ -2735,163 +2852,6 @@ SUBROUTINE GRAMM(A,B,C,M,N,MSB,W)
    RETURN                                   
 END SUBROUTINE GRAMM                                   
 
-
-!*********************************************************************
-!                                                                       
-!                        **********************                        
-!                        *  SUBROUTINE SET_FILENAMES
-!                        **********************                      
-!                                                                   
-! Take the command line and parse it up to determine
-! which filenames to use for DEF, DAT, OUT, and other incidental
-! output files.  The basename of the caller is passed in to establish
-! the default values.
-!
-!  FILENAMES .... Array of 4 CHARACTER*40 to receive the names of the
-!                 files to use for DEF, DAT, OUT, and other output files.
-!                 For any given filename, if there is nothing supplied
-!                 in the command line for that name, it is filled in
-!                 with the default, which is the supplied module name.
-!  CMDLINE ...... The command line for the EXE (everything on the DOS
-!                 command line to the left of the module name), or the
-!                 string passed to the DLL's init function.
-!  BASENAME ..... One of 'MIXOR', 'MIXNO', 'MIXREG', 'MIXPREG' to fill 
-!                 in any filenames that are not supplied in the command 
-!                 line.                                                  
-!                
-! The commandline (and the dll parameter) include a string with the 
-! names of the files to use, in order:
-!
-!     DEFFILE,DATFILE,OUTFILE,BASENAME
-!
-! and any or all of the names can be omitted to get the default name
-! for that file.  For example, to override the names of the EST, VAR
-! and RES files to TEMP.EST, TEMP.VAR, etc., enter eg.: MIXNOB ,,,TEMP
-!*********************************************************************
-SUBROUTINE SET_FILENAMES(FILENAMES, CMDLINE, BASENAME) 
-   IMPLICIT NONE
-   integer length
-   CHARACTER*40, INTENT(OUT):: FILENAMES(4), cmdline, basename
-   INTEGER COMMAPOS,STARTPOS, FINDEX
-   
-   ! set up default
-      write(*,*) basename
-   FILENAMES(1) = BASENAME! // '.DEF'
-   FILENAMES(2) = ''
-   FILENAMES(3) = ''
-   FILENAMES(4) = BASENAME
-   
-   ! Check to see if any of the default names for the 
-   ! input or output files have been overridden by the 
-   ! caller.
-   ! DEFFILE,DATFILE,OUTFILE,BASENAME
-   
-   ! start by parsing the command line, then deal with
-   ! each in turn.
-!   IF (LEN_TRIM(CMDLINE) .GT. 0) THEN
-!      STARTPOS = 1
-!      FINDEX = 1
-!      
-!      !write(6,*) ' SCAN(CMDLINE(STARTPOS:),",")', &
-!      !   SCAN(CMDLINE(STARTPOS:),',') 
-!      DO WHILE (STARTPOS .LE. LEN(CMDLINE) )
-!         COMMAPOS = INDEX(CMDLINE(STARTPOS:),',')
-!         IF(COMMAPOS .GT.0) THEN
-!            IF(COMMAPOS .GT. 1) &
-!            FILENAMES(FINDEX) =  &
-!               TRIM(CMDLINE(STARTPOS:STARTPOS+COMMAPOS-2))
-!            STARTPOS = STARTPOS+COMMAPOS
-!         ELSE
-!            FILENAMES(FINDEX) = CMDLINE(STARTPOS:)
-!            EXIT
-!         ENDIF
-!         FINDEX = FINDEX + 1
-!         IF(FINDEX .GT. 4) EXIT  ! ONLY WANT 4 NAMES, DISCARD REST
-!      END DO
-!   ENDIF
-   
-   ! You can override one or all of the filenames.  
-   
-   ! If the DATFILE or OUTFILE name are included, 
-   ! they override the name given in the DEFFILE.  
-   
-   ! If an extension is used with the override name, 
-   ! then it will be used, otherwise the default extensions 
-   ! of DEF,DAT, and OUT will be used for the three files.   
-   CALL ADD_EXTENSION(FILENAMES(1),"DEF")
-   CALL ADD_EXTENSION(FILENAMES(2),"DAT")
-   CALL ADD_EXTENSION(FILENAMES(3),"OUT")
-   
-   ! If the BASENAME is included, it overrides the base of 
-   ! the names used for the incidental output files (the 
-   ! extensions do not change).  The override names would 
-   ! be supplied either as arguments to the DLL routine
-   
-   CONTAINS
-   
-   SUBROUTINE ADD_EXTENSION(BASENAME,EXTENSION)
-      CHARACTER (*), INTENT(IN OUT):: BASENAME
-      CHARACTER (*), INTENT(IN):: EXTENSION
-      
-      IF(LEN_TRIM(BASENAME) .GT. 0) THEN
-         IF(INDEX(BASENAME,'.') .EQ. 0) THEN
-            BASENAME=TRIM(ADJUSTL(BASENAME)) // "."// TRIM(EXTENSION)
-         ENDIF
-      ENDIF
-      write(*,*) basename
-   END SUBROUTINE ADD_EXTENSION
-
-END SUBROUTINE SET_FILENAMES
-
-
-
-subroutine unique(IDs,n,ID)
-!
-! Purpose:
-! To sort and remove the duplicate ID numbers
-!
-   INTEGER,INTENT(IN):: n
-   INTEGER,INTENT(IN),DIMENSION(n):: IDs
-   INTEGER,INTENT(OUT),DIMENSION(n)::ID
-   INTEGER:: i,j,k,n1,swap
-
-   ID(:)=0
-
-   !remove the duplicate ID
-   j=1
-   ID(j)=IDs(j)
-   do i=1,n
-      if (ID(j)==IDs(i)) then
-         continue
-      else
-         j=j+1
-         ID(j)=IDs(i)
-      end if
-   end do
-
-   !sort the ID
-   n1=COUNT(ID>0)
-   do i=1,n1-1
-
-      !find the location of minimum value
-       k=i
-       do j=i+1,n1
-          IF(ID(j)<ID(k)) THEN
-            k=j
-          END if
-       end do
-
-      !swap the minimum value
-      IF(i/=k) THEN
-        swap=ID(i)
-        ID(i)=ID(k)
-        ID(k)=swap
-      END if
-   end do
-
-end subroutine unique
-
-
 ! SUBRUTINE TO READ LEVEL 3 DATA
 
  SUBROUTINE READLV3(FILEDAT,NOBS,NVAR,R3,ID3IND,IDIND,X3IND,N3,NI3,X3)
@@ -2899,7 +2859,7 @@ end subroutine unique
   INTEGER,INTENT(OUT):: N3
   INTEGER,POINTER:: NI3(:)
   REAL(KIND=8),POINTER::X3(:,:)
-  CHARACTER (len=*),allocatable::FILEDAT
+  CHARACTER (len=*), INTENT(IN):: FILEDAT
 
   INTEGER I,J,IC1,IC2
   INTEGER,ALLOCATABLE:: IDS3(:),IDS2(:), ID3(:),NI3A(:),TEMP(:),TEMP1(:)
