@@ -2,7 +2,7 @@
 !  MIXOR with Random Scale
 !
 ! *************************************************************
-!
+!                                                                            
 
 MODULE mixor_globals
     IMPLICIT NONE
@@ -34,27 +34,19 @@ PROGRAM MIXorS
     call readData()
     call adjustData()
     call printdesc()
-    call startv2()
+    call startv2()    
     call mixorEst()
-#if defined(_WIN32)
     CALL SYSTEM("COPY mixors1.OUT+mixors_both.OUT " // trim(fileprefix)//"_stage1.out")
     if(stage2 .ne. 0) call run_stage2()
     call system("mkdir work")
     call system("move mixors_both_* work")
-#else
-    CALL SYSTEM("cat mixors1.OUT mixors_both.OUT >> " // trim(fileprefix)//"_stage1.out")
-    if(stage2 .ne. 0) call run_stage2()
-    call system("mkdir work")
-    call system("mv mixors_both_* work")
-#endif
-
 end program mixors
 
 subroutine run_stage2()
     use mixor_globals
     implicit none
     integer::i,j,k
-
+    
         open(1,file="stage2only.def")
     WRITE(1,"(A80)") HEAD1
     WRITE(1,"(A80)") HEAD2
@@ -107,14 +99,10 @@ subroutine run_stage2()
         IF (Pto .GE. 1) THEN
             write(1,*) (var2label(k+I), I=1,Pto)
         END IF
-#if defined(_WIN32)
         call system("stage2only")
-#else
-        call system("./stage2only")
-#endif
-    CLOSE(1)
+    CLOSE(1)   
 end subroutine run_stage2
-
+     
 
 subroutine readDef
     use mixor_globals
@@ -145,7 +133,7 @@ subroutine readDef
         nalpha = R
         ns = max(min(ncov+1,3),1)
     end if
-
+    
     READ(1,*) ID2IND, YIND
      IF (P .GE. 1) THEN
         ALLOCATE(XIND(P))
@@ -194,7 +182,7 @@ subroutine readDef
     s = s + 2*sv
     allocate(jcodes(maxj))
     READ(1,*)(jCODEs(i), i = 1,MAXJ)
-
+      
     READ(1,*) YLABEL
      IF (P .GE. 1) THEN
         ALLOCATE(BLABel(P))
@@ -222,11 +210,11 @@ subroutine readDef
      END IF
     ngamma = maxj-1
     NPAR = P+RR*mls+nalpha*(1-mls)+ngamma+S+NS ! number of parameters
-
+    
         select case(stage2)
-        case(1,3)
+        case(1,3)     
             readcats = 0
-        case(2,4)
+        case(2,4) 
             readcats = 1
         case default
             stage2 = 0
@@ -299,7 +287,7 @@ subroutine writeDef
     implicit none
     integer :: i,j,k
     OPEN(1,FILE=trim(fileprefix)//".def")
-
+    
     WRITE(1,"(A80)") HEAD1
     WRITE(1,"(A80)") HEAD2
     WRITE(1,"(A80)")FILEDAT
@@ -307,7 +295,7 @@ subroutine writeDef
     write(1,*) NVAR, maxj, Pold, Rold, Sold, rnint, pv, rv, sv, CONV, NQ, AQUAD, MAXIT, yMISS, ridgein, nfn, nors,&
                 myseed, stage2, multi2nd, sepfile, mls, ncov
     write(1,*) chol, iadd
-
+             
     WRITE(1,'(20I3)') ID2IND, YIND
     IF (P .GE. 1) THEN
         WRITE(1,'(20I3)') (XIND(I), I=1,Pold)
@@ -401,14 +389,14 @@ subroutine writeDef
             write(1,*) (var2label(k+I), I=1,Pto)
         END IF
     end if
-
+    
     CLOSE(1)
 end subroutine writeDef
 
 subroutine readData
     use mixor_globals
     implicit none
-
+    
     INTEGER :: myPASS,I,K,ICOUNT,myindex,IDTEMP,IDOLD,hasmiss,nvartotal
     REAL(KIND=8),ALLOCATABLE:: TEMPR(:)
     INTEGER,ALLOCATABLE :: allvarsind(:)
@@ -446,7 +434,7 @@ subroutine readData
               ni = 0
               allocate(Ids(nclust))
         ENDIF
-
+   
         I     = 1
         K     = 1
         ICOUNT= 0
@@ -456,7 +444,7 @@ subroutine readData
         OPEN(1,ACTION='READ',FILE=FILEDAT)
 
         DO   ! loop forever
-
+        
               READ(1,*,END=1999)(TEMPR(myindex),myindex=1,NVAR)
                 hasmiss = 0
                 IF (MISS .EQ. 1) THEN
@@ -474,8 +462,8 @@ subroutine readData
 
               IDTEMP = INT(TEMPR(ID2IND))
               ! QUERY FOR NEW ID AND SET PARAMETERS ACCORDINGLY
-              IF (.NOT. FIRST) THEN
-                  ! if r=0 and rnint=1 then NO random effects
+              IF (.NOT. FIRST) THEN 
+                  ! if r=0 and rnint=1 then NO random effects 
                  IF (R .GE. 1 .AND. IDTEMP .EQ. IDOLD) THEN
                     K     = K+1
                  ELSE
@@ -553,7 +541,7 @@ subroutine adjustData
         else
             clabel(ll+j*2-1) = trim(varlabel(j+pv)) // "_BS"
             clabel(ll+j*2) = trim(varlabel(j+pv)) // "_WS"
-        end if
+        end if        
     end do
     do j=1, sv
         ll = sold
@@ -623,7 +611,7 @@ SUBROUTINE printDesc()
         call descripc(w,nobs,s,meanw,stdw,minw,maxw)
     end if
      OPEN(UNIT=17,FILE="mixors1.OUT")
-
+     
      WRITE(17,'("MixorS: Mixed-effects (multiple) Location Ordinal Scale Model")')
      write (17,*)
      WRITE(17,'("-----------------------------")')
@@ -662,7 +650,7 @@ SUBROUTINE printDesc()
                /,1x,'-------------------------------------------------------------',/)
     WRITE(17,457)
     457 FORMAT(1X,'Category',5X,'   Frequency',5x,'  Proportion',/)
-    cumprob = 0
+    cumprob = 0   
     DO J = 1,MAXJ
         CATpct(J) = real(catcount(J)) / nobs
         WRITE(17,"(1X,F8.2,5X,F12.2,5x,f12.5)") jCODEs(J),real(catcount(J)),catpct(J)
@@ -671,7 +659,7 @@ SUBROUTINE printDesc()
 
      if (p>0) then
         WRITE(17,'(" Mean model covariates")')
-        WRITE(17,'("                                 mean         min         max     std dev")')
+        WRITE(17,'("                                 mean         min         max     std dev")') 
         WRITE(17,'(" ------------------------------------------------------------------------")')
         do i=1,p
            WRITE(17,200) BLABel(i),meanx(i),minx(i),maxx(i),stdx(i)
@@ -681,7 +669,7 @@ SUBROUTINE printDesc()
 
      if (r>0) then
         WRITE(17,'(" BS variance variables")')
-        WRITE(17,'("                                 mean         min         max     std dev")')
+        WRITE(17,'("                                 mean         min         max     std dev")') 
         WRITE(17,'(" ------------------------------------------------------------------------")')
         do i=1,max(r,nalpha)
            WRITE(17,200) cLABel(i),meanu(i),minu(i),maxu(i),stdu(i)
@@ -691,7 +679,7 @@ SUBROUTINE printDesc()
 
      if (s>0) then
         WRITE(17,'(" WS variance model covariates")')
-        WRITE(17,'("                                 mean         min         max     std dev")')
+        WRITE(17,'("                                 mean         min         max     std dev")') 
         WRITE(17,'(" ------------------------------------------------------------------------")')
         do i=1,s
            WRITE(17,200) TLABel(i),meanw(i),minw(i),maxw(i),stdw(i)
@@ -707,7 +695,7 @@ SUBROUTINE STARTV2()
     integer:: i,j,k
     real(kind=8) :: cumprob,lncumodds,myint,tempparam
     real(kind=8), allocatable :: xpx(:,:), xpxi(:,:), catpct(:),ytemp(:,:),xpy(:,:),x1(:,:)
-
+    
     allocate(mygamma(ngamma))
     allocate(beta(p))
     allocate(mychol(rr))
@@ -731,7 +719,7 @@ SUBROUTINE STARTV2()
     myint = 0!dot_product(beta, meanx)
     !Need to calculate xb from linear regression, and use where currently says xb
     allocate(catpct(maxj))
-    cumprob = 0
+    cumprob = 0   
     DO J = 1,MAXJ
         CATpct(J) = real(catcount(J)) / nobs
         if(j < maxj) then
@@ -747,7 +735,7 @@ SUBROUTINE STARTV2()
                 tempparam = DLOG(0.0D0 - DLOG(cumprob))
             ENDIF
             mygamma(j) = tempparam - myint*iadd
-        end if
+        end if 
     END DO
     tau(:) = 0
     if(s>0) tau(1) = 1
@@ -774,7 +762,7 @@ SUBROUTINE STARTV2()
     end if
     deallocate(xpx,ytemp,xpxi,catpct,xpy,meanx)
 END SUBROUTINE STARTV2
-
+  
 
 
 ! ----------------------------------------------------------------------------
@@ -847,11 +835,11 @@ SUBROUTINE MIXorEST()
     allocate(asstar2(npar,npar))
     allocate(sigma(cholamt))
     allocate(mycholspar(cholamt))
-
+    
 ! start cycles
 ! cycles = 1: random intercept model with BS variance terms
 ! cycles = 2: add in scale (WS) variance terms
-! cycles = 3: add in random scale
+! cycles = 3: add in random scale 
 ! cycles = 4: use NS = R+1
     open(unit=iun,file="mixors_both.out",status="replace")
     close(iun)
@@ -869,7 +857,7 @@ SUBROUTINE MIXorEST()
             WRITE(IUN,*)
             WRITE(*,*)
             WRITE(IUNS,*)
-
+             
         if (cycles==1) then
             write(IUN,*)'MULTIPLE LOCATION EFFECTS =',mls==1
             WRITE(IUN,'("----------------------------")')
@@ -974,7 +962,7 @@ SUBROUTINE MIXorEST()
      !
         ridge  = ridgein
         RIDGEIT= 0
-
+    
          ! set the ridge up for the models with scale parameters
         if (CYCLES>1) then
             ridge = ridgein+.05D0
@@ -983,14 +971,14 @@ SUBROUTINE MIXorEST()
             ridge = RIDGEIN+.15D0
         END IF
         if(ridge < 0) ridge = ridgein
-
+    
         loglp  = -999999999999999.0
-
+    
         ITER=1
     ! START WITH NEWTON RAPHSON (MIXREG for starting values)
         IFIN=1
         IFINLOOP:DO WHILE (ifin < 3)
-
+    
              ! set ifin=2 if on the last iteration
             if (ifin == 2) then
                 ifin = 3
@@ -999,7 +987,7 @@ SUBROUTINE MIXorEST()
             do k=2, npar_cycle
                 if(minder2 > myder2(k,k)) minder2 = myder2(k,k)
             end do
-
+        
              ! put the ridge back to its initial value after the first 5 & 10 iterations
             IF (ridge > ridgein .and. mod(iter, 10)==0) THEN
                 ridge = ridge - .05
@@ -1007,7 +995,7 @@ SUBROUTINE MIXorEST()
             if(ridge < 0) ridge = 0 !To get rid of -0 values
             if(iter >= 10 .and. (maxval(abs(myder(1:npar_cycle))) < 2.5)) then! .or. maxval(abs(corec(1:npar_cycle)))<conv*10)) then
                 ridge = 0
-            else
+            else 
                 if (cycles <= 3 .and. iter >= 5+cycles*5 .and. maxval(abs(myder(1:npar_cycle))) < 10 .and. minder2 > 100) then
                     ridge = 0
                 else
@@ -1093,8 +1081,8 @@ SUBROUTINE MIXorEST()
                                         dlambda_upper1(npar_cycle-1,1) = -mypoints(q,1)**2*lambda_upper
                                         dlambda_lower1(npar_cycle-1,1) = -mypoints(q,1)**2*lambda_lower
                                     end if
-                                end if
-                            else
+                                end if                                
+                            else                                
                                 dlambda_upper1(npar_cycle,1) = -mypoints(q,numloc+1)*lambda_upper
                                 dlambda_lower1(npar_cycle,1) = -mypoints(q,numloc+1)*lambda_lower
                             end if
@@ -1122,7 +1110,7 @@ SUBROUTINE MIXorEST()
                                             if(kk==ns_cycle) then
                                                 myqderp2(j,npar_cycle,h) = myqderp2(j,npar_cycle,h) - mypoints(q,numloc+1)* &
                                                         (pdf_upper*dlambda_upper1(h,1)-pdf_lower*dlambda_lower1(h,1))
-                                            else if(mls .eq. 1) then
+                                            else if(mls .eq. 1) then 
                                                 myqderp2(j,npar_cycle-ns_cycle+kk,h) = &
                                                     myqderp2(j,npar_cycle-ns_cycle+kk,h) - mypoints(q,kk)*&
                                                     (pdf_upper*dlambda_upper1(h,1)-pdf_lower*dlambda_lower1(h,1))
@@ -1194,7 +1182,7 @@ SUBROUTINE MIXorEST()
             LOGLP   = LOGL
             ! determine if an NR iteration is bad and increase the ridge
             ! take the ridge off after 10 good iterations
-
+            
             IF (LOGDIFF/LOGLP > .05 .AND. ITER < MAXIT) THEN
                 RIDGEIT = 0
                 RIDGE = RIDGE + .05D0
@@ -1204,14 +1192,14 @@ SUBROUTINE MIXorEST()
                 corec(1:npar_cycle) = -.5 * corec(1:npar_cycle)
                 GO TO 99
             END IF
-
+        
             if(ifin < 2 .and. cycles > 1) then
                  ! ridge adjustment - diagonal elements only
                 do k=1,npar_cycle
                     myder2(k,k) = abs(myder2(k,k))*(1 + ridge)
                 end do
             end if
-
+        
             temp(1:npar_cycle,1:npar_cycle) = myder2(1:npar_cycle,1:npar_cycle)
     write(IUNS,*)"2nd Derivatives"
                 do k=1,npar_cycle
@@ -1226,7 +1214,7 @@ SUBROUTINE MIXorEST()
             corec1(1:npar_cycle,1) = matmul(temp(1:npar_cycle,1:npar_cycle), corec1(1:npar_cycle,1))
             corec(1:npar_cycle) = corec1(1:npar_cycle,1)
             if(iter<=5) corec = corec*.5
-
+        
             write(IUNS,*)"Derivatives"
             write(IUNS,'(25g15.4)') (myder(k), k=1,npar_cycle)
 !            write(*,*)"Derivatives"
@@ -1261,14 +1249,14 @@ SUBROUTINE MIXorEST()
 !                write(*,*)"Spar"
 !                write(*,'(25f12.3)') (spar(k),k=1,ns_cycle)
             end if
-
+        
             MAXDER=MAXVAL(ABS(myDER(1:npar_cycle)))
             MAXCORR=MAXVAL(ABS(COREC(1:npar_cycle)))
             WRITE(*,*) iter,'  maximum correction and derivative and ridge'
             WRITE(*,'(25g15.4)') maxcorr,MAXDER,ridge
             WRITE(IUNS,*) iter,'  maximum correction and derivative and ridge'
             WRITE(IUNS,'(25g15.4)') MAXCORR,MAXDER,ridge
-
+        
              ! done with NR and onto last iteration
              IF (IFIN==1 .AND. (MAXCORR <= CONV .OR. ITER >= MAXIT)) THEN
                  IFIN=2
@@ -1298,16 +1286,12 @@ SUBROUTINE MIXorEST()
             write(IUNS,'(25f15.4)') (corec(k), k=1,npar_cycle)
 !            write(*,*)"Corrections"
 !            write(*,'(25f9.3)') (corec(k), k=1,npar_cycle)
-if(any(corec(1:npar_cycle)+1==corec(1:npar_cycle))) then
-    write(*,*) "NaN detected!"
-    write(iuns,*) "NaN detected!"
-    iter=maxit+1
-else
+
             beta = beta + corec(1:p)
             mygamma(1) = mygamma(1) + corec(p+1)
             do k=2, ngamma
                 mygamma(k) = mygamma(k) + corec(p+k)
-                if(mygamma(k) < mygamma(k-1)) then
+                if(mygamma(k) < mygamma(k-1)) then 
                     write(*,*) k-1,k,mygamma(k-1), mygamma(k), "threshold value too small!"
                     write(iuns,*) k-1,k,mygamma(k-1), mygamma(k), "threshold value too small!"
                     mygamma(k) = mygamma(k-1)+.01
@@ -1335,12 +1319,11 @@ else
                 if(spar(ns_cycle) < 0) spar(ns_cycle) = abs(spar(ns_cycle))
             end if
              ITER = ITER+1
-end if
         END DO IFINLOOP
 
         if(mls .eq. 1) then
             if(cycles .ne. 4) then
-                if(rr_cycle*mls > 0 .and. chol .ne. 2) then
+                if(rr_cycle*mls > 0 .and. chol .ne. 2) then         
                     cholamt = rr_cycle
                     mycholspar(1:rr_cycle) = mychol
                     sigma(1:rr_cycle) = mychol
@@ -1348,7 +1331,7 @@ end if
                         myorder(j) = j
                     end do
                     k=1
-                    if(cycles >= 4) then
+                    if(cycles >= 4) then 
                         mycholspar(rr+1:rr+ns) = spar(1:ns)
                         sigma(rr+1:rr+ns) = spar(1:ns)
                         if(chol .ne. 1) then
@@ -1362,10 +1345,10 @@ end if
                             end do
                         end if
                     end if
-                            do j=1,cholamt
-                                myorder2(j) = myorder(j)+p+ngamma
-                                 if(myorder(j)>rr) myorder2(j) = myorder2(j)+s
-                            end do
+                    do j=1,cholamt
+                        myorder2(j) = myorder(j)+p+ngamma
+                        if(myorder(j)>rr) myorder2(j) = myorder2(j)+s
+                    end do
 !write(67,*) "Cholesky"
 !write(67,'(20f6.2)') (mycholspar(j),j=1,cholamt)
                     if(chol .ne. 2) then
@@ -1404,7 +1387,7 @@ end if
 !    write(67,'(20F15.8)') (temp(i,j), j=1,npar_cycle)
 !end do
                         work(1:npar_cycle,1:npar_cycle) = matmul(asstar2(1:npar_cycle,1:npar_cycle), &
-                            temp(1:npar_cycle,1:npar_cycle))
+                            temp(1:npar_cycle,1:npar_cycle))        
                         adjVar(1:npar_cycle,1:npar_cycle) = matmul(work(1:npar_cycle,1:npar_cycle),&
                                                         transpose(asstar2(1:npar_cycle,1:npar_cycle)))
                     else
@@ -1414,16 +1397,17 @@ end if
                 else
                     adjvar = temp
                 end if
+            end if
         else
             adjvar = temp
         end if
-                DO k=1,npar_cycle
-                    se(k) = dsqrt(dabs(adjvar(k,k)))
-                END DO
-
-            do k=1,npar_cycle
+        DO k=1,npar_cycle
+            se(k) = dsqrt(dabs(adjvar(k,k)))
+        END DO
+                
+        do k=1,npar_cycle
                 write(19,'(25g15.4)') (adjvar(k,i), i=1,k)
-            end do
+        end do
             write(19,*)
              WRITE(13,'(35F15.8)')(BETA(k),k=1,P)
              if(mls .eq. 1) WRITE(13,'(35F15.8)')(sigma(myorder(k)),k=1,RR_cycle*mls)
@@ -1434,8 +1418,8 @@ end if
 !             WRITE(13,'(35F15.8)')(SE(k),k=1,p),(se(myorder2(k)),k=1,rr_cycle), &
 !             (se(k),k=p+rr+1,p+rr+s),(se(myorder2(k)),k=rr+1,rr+ns)
 
-            if(cycles .ne. 4 .or. ncov .eq. 0) then
-
+        !if(cycles .ne. 4 .or. ncov .eq. 0) then
+        
              ! WRITE RESULTS
             WRITE(iun,562)ITER-1,ORIDGE,LOGL,LOGL-NPAR, &
             LOGL-0.5D0*DBLE(NPAR)*DLOG(DBLE(NClust)),0-2*LOGL,0-2*(LOGL-NPAR), &
@@ -1453,7 +1437,7 @@ end if
          57 FORMAT(/,'Variable',20x,'    Estimate',4X,'AsymStdError',4x, &
                   '     z-value',4X,'     p-value',/,'----------------',12x,  &
                   '------------',4X,'------------',4X,'------------',4X,'------------')
-
+        
             PVAL=0.0D0
             ZVAL=0.0D0
             WRITE(IUN,'("BETA (regression coefficients)")')
@@ -1503,7 +1487,7 @@ end if
                     PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL),0))
                     WRITE(IUN,804)cLABel(L),alpha(L),SE(L2),ZVAL,PVAL
                 END DO
-            end if
+            end if    
             write(iun,*)
         804 FORMAT(A24,4(4x,F12.5))
         805 FORMAT(A10,I0,I0,12X,4(4x,F12.5))
@@ -1521,16 +1505,16 @@ end if
                 WRITE(IUN,584)
                 584 FORMAT('Thresholds (for identification)')
                 DO k = 1,ngamma
-                    k2   = p+k
+                    k2   = p+k 
                     ZVAL = mygamma(k)/SE(k2)
                     PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL),0))
                     WRITE(IUN,'(I2,22X,4(4x,F12.5))') k,mygamma(k),SE(k2),ZVAL,PVAL
                 END DO
             ENDIF
 
-             if(cycles == 5) then
-                 write(iun,*)
-                 if(mls .eq. 1) then
+            if(cycles == 5) then
+                write(iun,*)
+                if(mls .eq. 1) then
                     WRITE(IUN,'("Random location effects on WS variance (log-linear model)")')
                     do k=1,ns_cycle-1
                        L2=P+RR_cycle+S_cycle+k+ngamma
@@ -1548,9 +1532,9 @@ end if
                         if(k .eq. 2) WRITE(IUN,804)"Quadratic",spar(k),SE(L2),ZVAL,PVAL
                     end do
                 end if
-           end if
-
-             IF (cycles>=4) THEN
+            end if
+        
+            IF (cycles>=4) THEN
                  write(iun,*)
                 write(IUNS,'(25g15.4)') (se(k), k=1,npar_cycle)
                 WRITE(IUN,'("Random scale standard deviation")')
@@ -1559,26 +1543,25 @@ end if
                 ZVAL = SPAR(ns_cycle)/SE(L2)
                 PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL),0))
                 WRITE(IUN,804)'Std Dev         ',SPAR(ns_cycle),SE(L2),ZVAL,PVAL
-             end if
-
-
-             IF (MAXDER > CONV .AND. ITER >= MAXIT) THEN
+            end if
+        
+        
+            IF (MAXDER > CONV .AND. ITER >= MAXIT) THEN
                 WRITE(IUN,'("NOTE: CONVERGENCE CRITERION WAS NOT ACHIEVED")')
                 WRITE(IUN,'("FINAL FIRST DERIVATIVE AND CORRECTION VALUES")')
                 DO L=1,NPAR_cycle
                   WRITE(IUN,*)myDER(L),COREC(L)
-                END DO
-             END IF
+                 END DO
+         !   END IF
             end if
-            end if
-             close(IUN)
+        close(IUN)
     END DO CYCLELOOP
 
-     close(19)
+    close(19)
     close(13)
     open(19,file="MixorS_both.var")
     open(13,file="MixorS_both.est")
-
+     
                 write(19,'(25g15.4)') adjvar(p+1,p+1),(adjvar(p+1,i), i=1,npar_cycle)
             do k=1,npar_cycle
                 write(19,'(25g15.4)') adjvar(k,p+1),(adjvar(k,i), i=1,npar_cycle)
@@ -1586,7 +1569,7 @@ end if
 
              WRITE(13,'(a24, F15.8)')"intercept",-1*mygamma(1)
              WRITE(13,'(a24, F15.8)')(blabel(k),BETA(k),k=1,P)
-             WRITE(13,'(a24, F15.8)')("Threshold",mygamma(k),k=1,ngamma)
+             WRITE(13,'(a24, F15.8)')("Threshold",mygamma(k),k=1,ngamma)             
              if(mls .eq. 1) WRITE(13,'(a24,F15.8)')("VarCov",sigma(myorder(k)),k=1,RR_cycle)
              if(mls .eq. 0) WRITE(13,'(a24,F15.8)')("Alpha",alpha(k),k=1,RR_cycle*nalpha)
              WRITE(13,'(a24,F15.8)')(tlabel(k),TAU(k),k=1,S_cycle)
@@ -1639,8 +1622,8 @@ end if
         tauhatlow = exp(spar(ns_cycle)-myz*se(l2))
         tauhatup = exp(spar(ns_cycle)+myz*se(l2))
         WRITE(IUN,804)'Std Dev         ',tauhat, tauhatlow, tauhatup
-    end if
-
+    end if   
+    
     if(aquad .ne. 0) then
         do k=1,nclust
             write(29,'(i8,25g23.4)') ids(k),(thetas(k,i), i=1,ndim), ((thetavs(k,i,j),j=1,i),i=1,ndim)
@@ -1675,7 +1658,7 @@ subroutine lambdafun(nob,q,lambda_upper,lambda_lower,myscale)
     real(kind=8), intent(OUT)   :: lambda_lower  ! lambda ('z') value for lower
                                                 !   category below ds_y%data(nob,1), m-1
     real(kind=8), intent(OUT)   :: myscale       ! exp(wij'tau)
-
+      
       ! Local variables:
     integer :: k,m,t
     real(kind=8) :: Xb, wt, Us
@@ -1720,10 +1703,10 @@ subroutine lambdafun(nob,q,lambda_upper,lambda_lower,myscale)
     m = Yasint(nob)
     myscale = exp(-wt)
 
-    if (m <= ngamma) then
+    if (m <= ngamma) then  
         lambda_upper = (mygamma(m) -Xb -Us)*myscale
     end if
-    if (m > 1) then
+    if (m > 1) then  
         lambda_lower = (mygamma(m-1) -Xb -Us)*myscale
     end if
 end subroutine lambdafun
