@@ -9,8 +9,6 @@ program stage2only
     if(nreps > 0) then
         call make_random()
     else
-        allocate(allzeros(nc2))
-        allzeros = 0
         allocate(simvals(1,nc2,numloc+1-nors))
         simvals(1,:,:) = thetas(:,:)
         nreps = 1
@@ -23,7 +21,7 @@ subroutine readdef2()
     use procedures
     implicit none
     INTEGER :: I,j,k
-
+    
     OPEN(1, FILE='stage2only.def')
     READ(1,'(18A4)') HEAD
     READ(1,*)FILEDAT2
@@ -42,9 +40,9 @@ subroutine readdef2()
     if(multi2nd .ne. 1) multi2nd = 0
     sepfile = 1
     select case(stage2)
-        case(1,3)
+        case(1,3)     
             readcats = 0
-        case(2,4)
+        case(2,4) 
             readcats = 1
         case default
             stage2 = 0
@@ -122,9 +120,9 @@ subroutine writedef2
     write(1,*) NVAR2,numloc,nreps, nors, myseed, stage2, multi2nd,miss
 
     select case(stage2)
-        case(1,3)
+        case(1,3)     
             readcats = 0
-        case(2,4)
+        case(2,4) 
             readcats = 1
         case default
             stage2 = 0
@@ -199,6 +197,7 @@ subroutine adjustdata2()
         if(.not. fp_equal(data2(ko,1), tempsums(i,1))) yislevel2 = .TRUE.
     end do
     if(.not. yislevel2) multi2nd = 0
+    
 end subroutine adjustData2
 
 subroutine readebfile()
@@ -206,7 +205,7 @@ subroutine readebfile()
     use procedures
     implicit none
     integer:: k,i,numre2,numre
-
+    
 
     numre = numloc + (1-nors)
     numre2 = numre*(numre+1)/2
@@ -214,11 +213,14 @@ subroutine readebfile()
     allocate(thetas(nc2,numre))
     allocate(thetavs(nc2,numre2))
     allocate(idni(nc2,2))
-
+    allocate(allzeros(nc2))
+    allzeros = 0
+    
     open(1, file=ebfile)
 
     do k=1,nc2
         read(1, *) idni(k,1),(thetas(k,i),i=1,numre),(thetavs(k,i),i=1,numre2)
+        if(sum(thetas(k,:))+sum(thetavs(k,:)) .eq. 0) allzeros(k) = 1
     end do
     close(1)
 end subroutine readebfile
@@ -307,7 +309,7 @@ subroutine dostage2
             end do
         end if
         intLabel(nvar3+1) = "Random.Int.Var"
-        intLabel(nvar3+1+multi2nd) = "Residual.Variance"
+        intLabel(nvar3+1+multi2nd) = "Residual.Variance"            
         if(stage2 .eq. 2 .and. maxj > 2) then
             intLabel(nvar3+maxj) = "Random.Int.Var"
             do j=1,maxj-1
@@ -318,7 +320,7 @@ subroutine dostage2
 
         open(3, file=trim(fileprefix)//'_desc2.out')
          ALLOCATE(tempVector(nobs2))
-
+         
 
     200  FORMAT(1x,A24,4F12.4)
 !    write(3,9) head
@@ -338,7 +340,7 @@ subroutine dostage2
              temp=SUM(tempVector)/DBLE(nobs2-1)
              stdy=DSQRT(TEMP)
              WRITE(3,'(" Dependent variable")')
-         WRITE(3,'("                                 mean         min         max     std dev")')
+         WRITE(3,'("                                 mean         min         max     std dev")') 
          WRITE(3,'(" ------------------------------------------------------------------------")')
              WRITE(3,200) var2Label(1),meany,miny,maxy,stdy
         else
@@ -353,17 +355,17 @@ subroutine dostage2
             end do
              WRITE(3,'(" Categories of the Dependent Variable")')
              WRITE(3,'(" ----------------------------------------------------------------")')
-             WRITE(3,'(" Category             Frequency         Proportion")')
+             WRITE(3,'(" Category             Frequency         Proportion")') 
             DO J = 1,MAXJ
                 WRITE(3,"(1X,F8.2,8X,F12.2,8x,f12.5)") iCODE(J),real(catcount(J)),real(catcount(J))/nobs2
             end do
         end if
-
+        
         if(pfixed > 0) then
             write(3,*)
             write(3,*)
              WRITE(3,'(" Independent variables")')
-         WRITE(3,'("                                 mean         min         max     std dev")')
+         WRITE(3,'("                                 mean         min         max     std dev")') 
          WRITE(3,'(" ------------------------------------------------------------------------")')
 
             do i=1,pfixed
@@ -380,7 +382,7 @@ subroutine dostage2
          WRITE(3,*)
          WRITE(3,*)
          WRITE(3,'(" Random Location and Scale EB mean estimates")')
-         WRITE(3,'("                                 mean         min         max     std dev")')
+         WRITE(3,'("                                 mean         min         max     std dev")') 
          WRITE(3,'(" ------------------------------------------------------------------------")')
         do j=1,numloc+1-nors
             meany=sum(thetas(:,j),ni>0)/dble(nc2a)
@@ -409,12 +411,12 @@ subroutine dostage2
          write(3,*) "There are",sum(allzeros),"subjects with unestimable random effect values"
          WRITE(3,*)
          WRITE(3,*)
-
+         
 
          close(3)
             write(mystr, '(I5)') nreps
 
-
+    
     totalvar = nvar3-1+multi2nd
     select case(stage2)
         case(1)
@@ -422,7 +424,7 @@ subroutine dostage2
             totalvar = nvar3+multi2nd
         case(2)
             !progname = "mixor"
-            !if(multi2nd .eq. 1)
+            !if(multi2nd .eq. 1) 
             progname = "mixors"
             totalvar = nvar3-1+multi2nd+maxj-1
         case(3)
@@ -546,11 +548,7 @@ subroutine dostage2
             end if
         end do
         close(n*5)
-#if defined(_WIN32)
         CALL SYSTEM(progname//"> _temp")
-#else
-        CALL SYSTEM("./"//progname//" > _temp")
-#endif
             open(n*5+4, file=trim(progname)//".lik")
             read(n*5+4,*) liks(n),checknum
             close(n*5+4)
@@ -640,7 +638,7 @@ if(nvalid .eq. 1) nvalid = 2
         if(intLabel(jlabel) .eq. "Random.Int.Var") write(2,*)
         seval = sqrt(totalvarhats(jval)+varbetas(jval)*(1+1/nvalid))
         ZVAL = meanbetas(jval)/seval
-        PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL),0))
+        PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL),0))        
         if(stage2 .ne. 2) then
             write(2,804) intlabel(jlabel), meanbetas(jval), seval,zval,pval
         else if(maxj .eq. 2) then
@@ -651,30 +649,18 @@ if(nvalid .eq. 1) nvalid = 2
         if(stage2 .eq. 4 .and. mod(j,nvar3-1+multi2nd) .eq. 0) write(2,*)
     end do
 close(2)
-#if defined(_WIN32)
         CALL SYSTEM("copy "//trim(fileprefix)//"_desc2.out+"//fileout//" "//trim(fileprefix)//".out")
         CALL SYSTEM("mkdir work")
     call system("move "//trim(fileprefix)//"_* work")
-    call system("move "//trim(fileprefix)//"*_x.out"//fileout//"temp_.* work")
-    call system("move "//trim(fileprefix)//".def work")
-    call system("move "//trim(progname)//".var"//trim(progname)//".est"//trim(progname)//".lik"//trim(progname)//".def work")
-    CALL SYSTEM("DEL _temp")
-#else
-        CALL SYSTEM("cat "//trim(fileprefix)//"_desc2.out "//fileout//" >> "//trim(fileprefix)//".out")
-        CALL SYSTEM("mkdir work")
-    call system("mv "//trim(fileprefix)//"_* work")
-    call system("mv "//trim(fileprefix)//"*_x.out"//fileout//"temp_.* work")
-    call system("mv "//trim(fileprefix)//".def work")
-    call system("mv "//trim(progname)//".var"//trim(progname)//".est"//trim(progname)//".lik"//trim(progname)//".def work")
-    CALL SYSTEM("rm _temp")
-#endif
+    call system("move "//trim(fileprefix)//"*_x.out temp_.* work")
+    call system("move "//trim(progname)//".var "//trim(progname)//".est "//trim(progname)//".lik "//trim(progname)//".def work")
 end subroutine dostage2
 
 subroutine make_random
     use lsboth
     use procedures
     implicit none
-
+    
     INTEGER :: I,k,j,numre,c
     REAL(KIND=8),ALLOCATABLE:: chols(:,:,:),myrand(:,:)
     integer,allocatable :: tempseed(:)
@@ -683,8 +669,7 @@ subroutine make_random
     allocate(chols(nc2,numre,numre))
     allocate(simvals(nreps,nc2,numre))
     allocate(myrand(nc2,numre))
-    allocate(allzeros(nc2))
-
+    
     call random_seed(size=k)
     allocate(tempseed(k))
     tempseed(:) = myseed
@@ -693,16 +678,16 @@ subroutine make_random
     allzeros = 0
     do k=1,nc2
         c=1
-        do i=1,numre
-            do j=1,i
-                chols(k,i,j) = thetavs(k,c)
-                c = c+1
-                chols(k,j,i) = chols(k,i,j)
-            end do
-        end do
-
-        call cholesky_sub(chols(k,:,:),numre,allzeros(k))
-!        write(*,*) ((chols(k,i,j),i=1,numre),j=1,numre)
+        if(allzeros(k) .ne. 1) then
+	        do i=1,numre
+	            do j=1,i
+	                chols(k,i,j) = thetavs(k,c)
+	                c = c+1
+	                chols(k,j,i) = chols(k,i,j)
+	            end do
+	        end do
+            call cholesky_sub(chols(k,:,:),numre,allzeros(k))
+        end if
     end do
 !        write(*,'(20f8.3)') ((chols(1,i,j),i=1,numre),j=1,numre)
 !        write(*,'(20f8.3)') (thetavs(1,c),c=1,numre*(numre+1)/2)
@@ -743,7 +728,7 @@ SUBROUTINE READAT2()
               ALLOCATE (IDNIsep(NC2sep,2))
               IDNIsep = 0
         ENDIF
-
+   
         I     = 1
         K     = 1
         MAXKsep  = 0
@@ -755,7 +740,7 @@ SUBROUTINE READAT2()
         OPEN(1,ACTION='READ',FILE=FILEDAT2)
 
         DO   ! loop forever
-
+        
               READ(1,*,END=1999)(TEMPR(myindex),myindex=1,NVARsep)
                 hasmiss = 0
                 IF (MISS .EQ. 1) THEN
@@ -775,7 +760,7 @@ SUBROUTINE READAT2()
               IDTEMP = INT(TEMPR(ID2INDsep))
               ! QUERY FOR NEW ID AND SET PARAMETERS ACCORDINGLY
 
-              IF (.NOT. FIRST) THEN
+              IF (.NOT. FIRST) THEN 
                  IF (IDTEMP .EQ. IDOLD) THEN
                     K     = K+1
                  ELSE
@@ -806,7 +791,7 @@ SUBROUTINE READAT2()
               END IF
 
         END DO   ! loop back to read next line
-
+        
     ! cleanup final entry
     1999                IF (myPASS .EQ. 2) THEN
                            IDNIsep(I,1) = IDOLD
