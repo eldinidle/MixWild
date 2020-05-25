@@ -36,10 +36,17 @@ PROGRAM MIXorS
     call printdesc()
     call startv2()    
     call mixorEst()
+#if defined(_WIN32)
     CALL SYSTEM("COPY mixors1.OUT+mixors_both.OUT " // trim(fileprefix)//"_stage1.out")
     if(stage2 .ne. 0) call run_stage2()
     call system("mkdir work")
     call system("move mixors_both_* work")
+#else
+    CALL SYSTEM("cat mixors1.OUT mixors_both.OUT >> " // trim(fileprefix)//"_stage1.out")
+    if(stage2 .ne. 0) call run_stage2()
+    call system("mkdir work")
+    call system("mv mixors_both_* work")
+#endif
 end program mixors
 
 subroutine run_stage2()
