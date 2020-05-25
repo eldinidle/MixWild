@@ -665,7 +665,7 @@ close(2)
     call system("mv "//trim(fileprefix)//"_* work")
     call system("mv "//trim(fileprefix)//"*_x.out"//fileout//"temp_.* work")
     call system("mv "//trim(fileprefix)//".def work")
-    call system("mv "//trim(progname)//".var"//trim(progname)//".est"//trim(progname)//".lik "//trim(progname)//".def work")
+    call system("mv "//trim(progname)//".var "//trim(progname)//".est "//trim(progname)//".lik "//trim(progname)//".def work")
 #endif
 end subroutine dostage2
 
