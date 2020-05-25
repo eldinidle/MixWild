@@ -548,7 +548,11 @@ subroutine dostage2
             end if
         end do
         close(n*5)
+#if defined(_WIN32)
         CALL SYSTEM(progname//"> _temp")
+#else
+        CALL SYSTEM("./"//progname//" > _temp")
+#endif
             open(n*5+4, file=trim(progname)//".lik")
             read(n*5+4,*) liks(n),checknum
             close(n*5+4)
@@ -649,11 +653,20 @@ if(nvalid .eq. 1) nvalid = 2
         if(stage2 .eq. 4 .and. mod(j,nvar3-1+multi2nd) .eq. 0) write(2,*)
     end do
 close(2)
+#if defined(_WIN32)
         CALL SYSTEM("copy "//trim(fileprefix)//"_desc2.out+"//fileout//" "//trim(fileprefix)//".out")
         CALL SYSTEM("mkdir work")
     call system("move "//trim(fileprefix)//"_* work")
     call system("move "//trim(fileprefix)//"*_x.out temp_.* work")
     call system("move "//trim(progname)//".var "//trim(progname)//".est "//trim(progname)//".lik "//trim(progname)//".def work")
+#else
+        CALL SYSTEM("cat "//trim(fileprefix)//"_desc2.out "//fileout//" >> "//trim(fileprefix)//".out")
+        CALL SYSTEM("mkdir work")
+    call system("mv "//trim(fileprefix)//"_* work")
+    call system("mv "//trim(fileprefix)//"*_x.out"//fileout//"temp_.* work")
+    call system("mv "//trim(fileprefix)//".def work")
+    call system("mv "//trim(progname)//".var"//trim(progname)//".est"//trim(progname)//".lik "//trim(progname)//".def work")
+#endif
 end subroutine dostage2
 
 subroutine make_random
