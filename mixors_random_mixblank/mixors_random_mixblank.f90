@@ -106,7 +106,11 @@ subroutine run_stage2()
         IF (Pto .GE. 1) THEN
             write(1,*) (var2label(k+I), I=1,Pto)
         END IF
+#if defined(_WIN32)
         call system("stage2only")
+#else
+        call system("./stage2only")
+#endif
     CLOSE(1)   
 end subroutine run_stage2
      
