@@ -26,7 +26,8 @@ program mixregls_both
         call run_stage2()
     end if
 #if defined(_WIN32)
-    CALL SYSTEM("DEL mixregls_both1.OUT mixregls_both2.OUT mixreg.est mixreg.var mixreg.def mixreg.lik")
+!    CALL SYSTEM("DEL mixregls_both1.OUT mixregls_both2.OUT mixreg.est mixreg.var mixreg.def mixreg.lik")
+    CALL SYSTEM("DEL mixregls_both1.OUT mixregls_both2.OUT mixreg.est mixreg.var mixreg.def")
     if(mls .eq. 1) call system("del mixregls_both3.OUT")
 #else
     CALL SYSTEM("rm mixregls_both1.OUT")
@@ -34,7 +35,7 @@ program mixregls_both
     CALL SYSTEM("rm mixreg.est")
     CALL SYSTEM("rm mixreg.var")
     CALL SYSTEM("rm mixreg.def")
-    CALL SYSTEM("rm mixreg.lik")
+    ! CALL SYSTEM("rm mixreg.lik")
     if(mls .eq. 1) call system("rm mixregls_both3.OUT")
 #endif
 
