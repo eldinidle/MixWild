@@ -15,12 +15,12 @@ gfortran -c -o lsboth_random_mixblank.o -g -static -D _UNIX -cpp lsboth_random_m
 mkdir modules
 mv *.mod modules
 ar -qs libmix.a amod_mls_sstar.o hermite_rule.o lsboth_random_mixblank.o
-gfortran libmix.a -Jmodules -L/usr/local/gfortran/lib -static-libgcc -static-libgfortran -D _UNIX -cpp -o mixregls_both
+gfortran libmix.a -Jmodules -L/usr/local/gfortran/lib -static-libgcc -static-libgfortran -D _UNIX -cpp -o lsboth_random_mixblank
 rm *.o
 rm -rf modules
 rm libmix.a
 cd ..
-mv lsboth_random_mixblank/mixregls_both 'Mac Binaries'
+mv lsboth_random_mixblank/lsboth_random_mixblank 'Mac Binaries'
 
 echo 'mixreg'
 cd mixreg
@@ -48,12 +48,12 @@ gfortran -c -o sstar2d.o -g -static -D _UNIX -cpp sstar2d.f90
 ar -qs libmix.a hermite_rule.o mixors_random_mixblank.o sstar2d.o
 mkdir modules
 mv *.mod modules
-gfortran libmix.a -Jmodules -L/usr/local/gfortran/lib -static-libgcc -static-libgfortran -D _UNIX -cpp -o mixors_both
+gfortran libmix.a -Jmodules -L/usr/local/gfortran/lib -static-libgcc -static-libgfortran -D _UNIX -cpp -o mixors_random_mixblank
 rm *.o
 rm -rf modules
 rm libmix.a
 cd ..
-mv mixors_random_mixblank/mixors_both 'Mac Binaries'
+mv mixors_random_mixblank/mixors_random_mixblank 'Mac Binaries'
 
 echo 'mixors'
 cd mixors
