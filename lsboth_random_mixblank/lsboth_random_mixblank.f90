@@ -1,33 +1,49 @@
 program mixregls_both
     use lsboth,only:mls,fileout,stage2
     implicit none
+    write(*,*) "Reading definition file."
     call readdef_both()
+    write(*,*) "Writing new definition file."
     call writedef_both()
+    write(*,*) "Initializing memory."
     call readat()
+    write(*,*) "Transforming data."
     call adjustdata()
+    write(*,*) "Printing descriptives."
     call printdesc()
+    write(*,*) "Running model."
+    write(*,*) "MLS is: "
+    write(*,'(I4)') mls
     call callmixreg()
 
     if(mls .eq. 1) then
+        write(*,*) "Running MLS estimates"
         call mixregmlsest()
 #if defined(_WIN32)
         CALL SYSTEM("COPY mixregls_both1.OUT+mixregls_both3.OUT+mixregls_both2.OUT " // FILEOUT)
 #else
+        write(*,*) "Concatenating MLS results to" // FILEOUT
         CALL SYSTEM("cat mixregls_both1.OUT mixregls_both3.OUT mixregls_both2.OUT >> " // FILEOUT)
 #endif
+    end if
+    if(mls .eq. 0) then
+        write(*,*) "Running LS estimates"
         call mixreglsest()
 #if defined(_WIN32)
         CALL SYSTEM("COPY mixregls_both1.OUT+mixregls_both2.OUT " // FILEOUT)
 #else
+        write(*,*) "Concatenating LS results to" // FILEOUT
         CALL SYSTEM("cat mixregls_both1.OUT mixregls_both2.OUT >> " // FILEOUT)
 #endif
     end if
     if(stage2 .ne. 0) then
+        write(*,*) "Running stage 2 model"
         call run_stage2()
     end if
+    write(*,*) "All models complete."
+
 #if defined(_WIN32)
-!    CALL SYSTEM("DEL mixregls_both1.OUT mixregls_both2.OUT mixreg.est mixreg.var mixreg.def mixreg.lik")
-    CALL SYSTEM("DEL mixregls_both1.OUT mixregls_both2.OUT mixreg.est mixreg.var mixreg.def")
+    CALL SYSTEM("DEL mixregls_both1.OUT mixregls_both2.OUT mixreg.est mixreg.var mixreg.def mixreg.lik")
     if(mls .eq. 1) call system("del mixregls_both3.OUT")
 #else
     CALL SYSTEM("rm mixregls_both1.OUT")
@@ -35,7 +51,7 @@ program mixregls_both
     CALL SYSTEM("rm mixreg.est")
     CALL SYSTEM("rm mixreg.var")
     CALL SYSTEM("rm mixreg.def")
-    ! CALL SYSTEM("rm mixreg.lik")
+    CALL SYSTEM("rm mixreg.lik")
     if(mls .eq. 1) call system("rm mixregls_both3.OUT")
 #endif
 
@@ -2381,15 +2397,20 @@ subroutine callmixreg
     ALLOCATE (THETAs(NC2,ndim))
     ALLOCATE (thetavs(NC2,ndim2))
 
+    write(*,*) "Calling mixreg binary"
 #if defined(_WIN32)
        CALL SYSTEM("MIXREG.EXE > mixregls_both_temp_")
 #else
        CALL SYSTEM("./mixreg > mixregls_both_temp_")
 #endif
+   write(*,*) "Finished mixreg binary"
        open(unit=1,file="mixreg.lik")
        read(1,*) logl, npar
        close(1)
-       if(npar < p+rr+1) stop
+       if(npar < p+rr+1) then
+         write(*,*) "Stopping, npar < p+rr"
+         stop
+       end if
        open(unit=1,file="mixreg.est")
        do i=1,npar
             read(1,*) templabel, temp
