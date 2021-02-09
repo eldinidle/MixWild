@@ -35,7 +35,6 @@ PROGRAM MIXorS
     call printdesc()
     call startv2()
     call mixorEst()
-
 #if defined(_WIN32)
     CALL SYSTEM("COPY mixors.OUT " // trim(fileprefix)//".out")
     CALL SYSTEM("del mixors_all.est mixors_all.var mixors_details.its")

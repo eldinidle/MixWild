@@ -7,7 +7,6 @@ program mixregls_both
     call adjustdata()
     call printdesc()
     call callmixreg()
-
 #if defined(_WIN32)
     if(mls .eq. 1) then
         call mixregmlsest()
@@ -34,13 +33,13 @@ program mixregls_both
         call mixreglsest()
         CALL SYSTEM("cat mixregls_both1.OUT mixregls_both2.OUT >> " // FILEOUT)
     end if
-        CALL SYSTEM("rm mixregls_both1.OUT")
-        CALL SYSTEM("rm mixregls_both2.OUT")
-        CALL SYSTEM("rm mixreg.est")
-        CALL SYSTEM("rm mixreg.var")
-        CALL SYSTEM("rm mixreg.def")
-        CALL SYSTEM("rm mixreg.lik")
-        CALL SYSTEM("rm _temp")
+    CALL SYSTEM("rm mixregls_both1.OUT")
+    CALL SYSTEM("rm mixregls_both2.OUT")
+    CALL SYSTEM("rm mixreg.est")
+    CALL SYSTEM("mixreg.var")
+    CALL SYSTEM("mixreg.def")
+    CALL SYSTEM("rm mixreg.lik")
+    CALL SYSTEM("rm _temp")
 
     if(stage2 .ne. 0) then
         call run_stage2()
@@ -2389,7 +2388,7 @@ subroutine callmixreg
 #if defined(_WIN32)
        CALL SYSTEM("MIXREG.EXE > mixregls_both_temp_")
 #else
-       CALL SYSTEM("./mixreg > mixregls_both_temp_")
+       CALL SYSTEM("./MIXREG > mixregls_both_temp_")
 #endif
        open(unit=1,file="mixreg.lik")
        read(1,*) logl, npar

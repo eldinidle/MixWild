@@ -2,23 +2,17 @@ program stage2only
     use lsboth
     implicit none
     call readdef2()
-    WRITE(*,*) "Writing new stage 2 definition file"
     call writedef2()
-    WRITE(*,*) "Reading stage 2 data"
     call readat2()
-    WRITE(*,*) "Reading stage 2 eb vars"
     call readebfile()
-    WRITE(*,*) "Adjusting data"
     call adjustdata2()
     if(nreps > 0) then
-        WRITE(*,*) "neps are 0, making random"
         call make_random()
     else
-        allocate(simvals(1,nc2,numloc+1-nors))
+        allocate(simvals(1,nc2,numre))
         simvals(1,:,:) = thetas(:,:)
         nreps = 1
     end if
-    WRITE(*,*) "Running stage 2"
     call dostage2()
 end program stage2only
 
@@ -41,8 +35,17 @@ subroutine readdef2()
     READ(1,*) NVARsep,nc2,numloc,nreps, nors, myseed, stage2, multi2nd,Ymiss
     miss = 1
     if(fp_equal(ymiss, 0.0d0)) miss = 0
-
-    if(nors .ne. 1) nors = 0
+    nors0 = nors
+    if(nors .eq. 2) then
+        numrs = 2
+        nors = 0
+    else if(nors .eq. 1) then
+        numrs = 0
+    else
+        nors = 0
+        numrs = 1
+    end if
+    numre = numloc+numrs
     if(multi2nd .ne. 1) multi2nd = 0
     sepfile = 1
     select case(stage2)
@@ -56,7 +59,7 @@ subroutine readdef2()
             nvar3 = 0
     end select
     if(stage2 .ne. 0) then
-        if(nors .eq. 1) then
+        if(numrs .eq. 0) then
             pomega = -1
             pto = -1
             read(1,*) pfixed, ptheta
@@ -64,7 +67,7 @@ subroutine readdef2()
             read(1,*) pfixed,ptheta,pomega,pto
         end if
         nvar2 = 1+max(pfixed,0)+max(pomega,0)+max(ptheta,0)+max(pto,0)
-        nvar3 = 3+pfixed+pomega+numloc*(ptheta+1+pto+1)
+        nvar3 = 2+pfixed+(pomega+1)*numrs+numloc*(ptheta+1)+(pto+1)*numrs*numloc
 
         allocate(var2ind(nvar2))
         allocate(var2label(nvar2))
@@ -123,7 +126,7 @@ subroutine writedef2
     write(1,'(A80)')EBFILE
     write(1,'(A80)')FILEprefix
 
-    write(1,*) NVAR2,numloc,nreps, nors, myseed, stage2, multi2nd,miss
+    write(1,*) NVAR2,numloc,nreps, nors0, myseed, stage2, multi2nd,miss
 
     select case(stage2)
         case(1,3)
@@ -136,15 +139,13 @@ subroutine writedef2
             nvar3 = 0
     end select
     if(stage2 .ne. 0) then
-        if(nors .eq. 1) then
+        if(numrs .eq. 0) then
             pomega = -1
             pto = -1
             write(1,*) pfixed, ptheta
         else
             write(1,*) pfixed,ptheta,pomega,pto
         end if
-        nvar2 = 1+max(pfixed,0)+max(pomega,0)+max(ptheta,0)+max(pto,0)
-        nvar3 = 3+pfixed+pomega+numloc*(ptheta+1+pto+1)
 
         if(readcats .eq. 1) then
             write(1,*) maxj
@@ -210,10 +211,10 @@ subroutine readebfile()
     use lsboth
     use procedures
     implicit none
-    integer:: k,i,numre2,numre
+    integer:: k,i,numre2
 
 
-    numre = numloc + (1-nors)
+    numre = numloc + numrs
     numre2 = numre*(numre+1)/2
 
     allocate(thetas(nc2,numre))
@@ -250,9 +251,7 @@ subroutine dostage2
     nc2a = 0
     myorder = 0
     write(*,*) "There are ",sum(allzeros),"subjects with unestimable random effects"
-    if(multi2nd .eq. 1) then
-      write(*,*) "Multilevel second stage"
-    end if
+    if(multi2nd .eq. 1) write(*,*) "Multilevel second stage"
         j=0
         do i=1,nc2sep
             mymatch = -1
@@ -284,10 +283,7 @@ subroutine dostage2
             end if
         end do
         nobs2 = sum(ni)
-    if(multi2nd .ne. 1) then
-      write(*,*) "Single-level second stage"
-      data2(1:nc2sep,1:nvar2) = tempsums(1:nc2sep,1:nvar2)
-    end if
+        if(multi2nd .ne. 1) data2(1:nc2sep,1:nvar2) = tempsums(1:nc2sep,1:nvar2)
 !        write(*,*) myorder
 !        write(*,*) ni
 
@@ -297,7 +293,7 @@ subroutine dostage2
         allocate(intLabel(nvar3+2+max(maxj-1,0)))
         intlabel(1) = var2label(1)
         intlabel(2) = "Intercept             "
-        intlabel(3:pfixed+3) = var2label(2:1+pfixed)
+        intlabel(3:pfixed+2) = var2label(2:1+pfixed)
         do j=1,numloc
             write(mystr, '(A6, I1, A17)') "Locat_",j,"                 "
             intLabel(1+Pfixed+1+(Ptheta+1)*(j-1)+1) = mystr
@@ -306,18 +302,26 @@ subroutine dostage2
                 intlabel(1+pfixed+1+(Ptheta+1)*(j-1)+1+i) = mystr
             end do
         end do
-        if(pOmega >= 0) intlabel(1+pfixed+1+(1+Ptheta)*numloc+1) = "Scale                 "
-        if(pOmega > 0) intlabel(1+pfixed+1+(1+Ptheta)*numloc+2:1+pfixed+1+(1+Ptheta)*numloc+1+pomega) = &
-            "Scale*"//var2label(1+pfixed+ptheta+1:1+pfixed+ptheta+pomega)
+        do j=1,numrs
+            write(mystr, '(A6, I1, A17)') "Scale_",j,"                 "
+            intLabel(1+Pfixed+1+(Ptheta+1)*numloc+(1+pomega)*(j-1)+1) = mystr
+            do i=1,pOmega
+                write(mystr, '(A6, I1, A17)') "Scale_",j,"*"//var2label(1+pfixed+ptheta+i)
+                intlabel(1+pfixed+1+(Ptheta+1)*numloc+(1+pomega)*(j-1)+1+i) = mystr
+            end do
+        end do
         if(pTO >= 0) then
             do j=1,numloc
-                write(mystr, '(A6, I1, A17)') "Locat_",j,"*Scale                 "
-                intlabel(1+pfixed+1+(1+Ptheta)*numloc+1+pomega+(j-1)*(pto+1)+1) = mystr
-                do k=1, pto
-                    write(mystr, '(A6, I1, A17)') "Locat_",j,"*S*"//trim(var2label(1+pfixed+ptheta+pomega+k))
-                    intlabel(1+pfixed+1+(1+Ptheta)*numloc+1+pomega+(j-1)*numloc+1+k) = mystr
+                do i=1,numrs
+                    write(mystr, '(A6, I1, A6, A1, A10)') "Locat_",j,"*Scale_",i,"               "
+                    intlabel(1+pfixed+1+(1+Ptheta)*numloc+(1+pomega)*numrs+((j-1)*numrs+i-1)*(pto+1)+1) = mystr
+                    do k=1, pto
+                        write(mystr, '(A6, I1, A17)') "Locat_",j,"*S*"//trim(var2label(1+pfixed+ptheta+pomega+k))
+                        intlabel(1+pfixed+1+(1+Ptheta)*numloc+(1+pomega)*numrs+((j-1)*numrs+i-1)*(pto+1)+1+k) = mystr
+                    end do
                 end do
             end do
+
         end if
         intLabel(nvar3+1) = "Random.Int.Var"
         intLabel(nvar3+1+multi2nd) = "Residual.Variance"
@@ -431,20 +435,16 @@ subroutine dostage2
     totalvar = nvar3-1+multi2nd
     select case(stage2)
         case(1)
-            write(*,*) "Running mixreg"
             progname = "mixreg"
             totalvar = nvar3+multi2nd
         case(2)
             !progname = "mixor"
             !if(multi2nd .eq. 1)
-            write(*,*) "Running mixor"
             progname = "mixors"
             totalvar = nvar3-1+multi2nd+maxj-1
         case(3)
-            write(*,*) "Running mixpreg"
             progname = "mixpreg"
         case(4)
-            write(*,*) "Running mixno"
             progname = "mixno"
             totalvar = (maxj-1)*(nvar3-1+multi2nd)
     end select
@@ -609,12 +609,7 @@ subroutine dostage2
     WRITE(2,'("-------------")')
     WRITE(2,'("Final Results")')
     WRITE(2,'("-------------")')
-    if(nvalid .eq. 0) THEN
-      write(*,*) "WARNING: NO VALID REPLICATIONS"
-      error stop "WARNING: NO VALID REPLICATIONS"
-    else
-      logl = sum(liks)/nvalid
-    end if
+    logl = sum(liks)/nvalid
     allocate(meanbetas(totalvar+1))
     do j=1,totalvar
         meanbetas(j) = sum(betas(1:nvalid,j))/nvalid
@@ -683,10 +678,10 @@ close(2)
         CALL SYSTEM("cat "//trim(fileprefix)//"_desc2.out "//fileout//" >> "//trim(fileprefix)//".out")
         CALL SYSTEM("mkdir work")
     call system("mv "//trim(fileprefix)//"_* work")
-    call system("mv "//trim(fileprefix)//"*_x.out"//fileout//"temp_.* work")
-    call system("mv "//trim(fileprefix)//".def work")
+    call system("mv "//trim(fileprefix)//"*_x.out temp_.* work")
     call system("mv "//trim(progname)//".var "//trim(progname)//".est "//trim(progname)//".lik "//trim(progname)//".def work")
 #endif
+
 end subroutine dostage2
 
 subroutine make_random
@@ -694,11 +689,10 @@ subroutine make_random
     use procedures
     implicit none
 
-    INTEGER :: I,k,j,numre,c
+    INTEGER :: I,k,j,c
     REAL(KIND=8),ALLOCATABLE:: chols(:,:,:),myrand(:,:)
     integer,allocatable :: tempseed(:)
 
-    numre = numloc+(1-nors)
     allocate(chols(nc2,numre,numre))
     allocate(simvals(nreps,nc2,numre))
     allocate(myrand(nc2,numre))
