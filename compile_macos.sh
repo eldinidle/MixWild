@@ -100,19 +100,19 @@ rm libmix.a
 cd ..
 mv mixpreg/mixpreg 'Mac Binaries'
 
-echo 'stage2only'
+echo 'stage2only64'
 cd stage2only
 gfortran -c -o amod_mls_sstar.o -g -std=legacy -static -D _UNIX -cpp amod_mls_sstar.f90
 gfortran -c -o stage2only.o -g -std=legacy -static -D _UNIX -cpp stage2only.f90
 ar -qs libmix.a amod_mls_sstar.o stage2only.o
 mkdir modules
 mv *.mod modules
-gfortran libmix.a -Jmodules -L/usr/local/gfortran/lib -static-libgcc -static-libgfortran -D _UNIX -cpp -o stage2only
+gfortran libmix.a -Jmodules -L/usr/local/gfortran/lib -static-libgcc -static-libgfortran -D _UNIX -cpp -o stage2only64
 rm *.o
 rm -rf modules
 rm libmix.a
 cd ..
-mv stage2only/stage2only 'Mac Binaries'
+mv stage2only/stage2only64 'Mac Binaries'
 
 
 echo 'all done'
