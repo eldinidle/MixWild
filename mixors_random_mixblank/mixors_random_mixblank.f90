@@ -36,17 +36,10 @@ PROGRAM MIXorS
     call printdesc()
     call startv2()    
     call mixorEst()
-#if defined(_WIN32)
     CALL SYSTEM("COPY mixors1.OUT+mixors_both.OUT " // trim(fileprefix)//"_stage1.out")
     if(stage2 .ne. 0) call run_stage2()
     call system("mkdir work")
     call system("move mixors_both_* work")
-#else
-    CALL SYSTEM("cat mixors1.OUT mixors_both.OUT >> " // trim(fileprefix)//"_stage1.out")
-    if(stage2 .ne. 0) call run_stage2()
-    call system("mkdir work")
-    call system("mv mixors_both_* work")
-#endif
 end program mixors
 
 subroutine run_stage2()
@@ -106,11 +99,7 @@ subroutine run_stage2()
         IF (Pto .GE. 1) THEN
             write(1,*) (var2label(k+I), I=1,Pto)
         END IF
-#if defined(_WIN32)
-        call system("stage2only")
-#else
-        call system("./stage2only")
-#endif
+        call system("stage2only64")
     CLOSE(1)   
 end subroutine run_stage2
      

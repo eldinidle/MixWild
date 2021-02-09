@@ -5,7 +5,7 @@ module lsboth
                 PNINT,RNINT,SNINT,POLD,ROLD,SOLD,ncov,num0,discard0,nv,nvar2,mls,&
                 rv,sv,pv,numloc,chol,npar,npar2,ndim,ndim2,nqwr1,nqwr0,stage2,nreps,nors,&
                 pfixed,ptheta,pomega,pto,readcats,nvar3,maxj,multi2nd,myseed,sepfile,nvarsep,&
-                nc2sep,id2indsep,nobssep,maxksep
+                nc2sep,id2indsep,nobssep,maxksep,numrs,nors0,numre
     INTEGER,ALLOCATABLE :: XIND(:),UIND(:),WIND(:),IDNI(:,:),varIND(:),ids(:),var2ind(:),idnisep(:,:),allzeros(:)
     REAL(KIND=8) :: RIDGEIN,CONV,YMISS,SDLV,RCORR,errv,cutoff
     REAL(KIND=8),ALLOCATABLE:: Y(:),X(:,:),U(:,:),W(:,:),BETA(:),TAU(:),SPAR(:), tempsums(:,:),mychol(:),&

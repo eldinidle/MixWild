@@ -1,67 +1,29 @@
 program mixregls_both
     use lsboth,only:mls,fileout,stage2
     implicit none
-    write(*,*) "Reading definition file."
     call readdef_both()
-    write(*,*) "Writing new definition file."
     call writedef_both()
-    write(*,*) "Initializing memory."
     call readat()
-    write(*,*) "Transforming data."
     call adjustdata()
-    write(*,*) "Printing descriptives."
     call printdesc()
-    write(*,*) "Running model."
-    write(*,*) "MLS is: "
-    write(*,'(I4)') mls
     call callmixreg()
-
+    
     if(mls .eq. 1) then
-        write(*,*) "Running MLS estimates"
         call mixregmlsest()
-#if defined(_WIN32)
         CALL SYSTEM("COPY mixregls_both1.OUT+mixregls_both3.OUT+mixregls_both2.OUT " // FILEOUT)
-#else
-        write(*,*) "Concatenating MLS results to" // FILEOUT
-        CALL SYSTEM("cat mixregls_both1.OUT mixregls_both3.OUT mixregls_both2.OUT >> " // FILEOUT)
-#endif
-    end if
-    if(mls .eq. 0) then
-        write(*,*) "Running LS estimates"
+        call system("del mixregls_both3.OUT")
+    else
         call mixreglsest()
-#if defined(_WIN32)
         CALL SYSTEM("COPY mixregls_both1.OUT+mixregls_both2.OUT " // FILEOUT)
-#else
-        write(*,*) "Concatenating LS results to" // FILEOUT
-        CALL SYSTEM("cat mixregls_both1.OUT mixregls_both2.OUT >> " // FILEOUT)
-#endif
     end if
+    CALL SYSTEM("DEL mixregls_both1.OUT mixregls_both2.OUT mixreg.est mixreg.var mixreg.def mixreg.lik _temp")
+    
     if(stage2 .ne. 0) then
-        write(*,*) "Running stage 2 model"
         call run_stage2()
     end if
-    write(*,*) "All models complete."
-
-#if defined(_WIN32)
-    CALL SYSTEM("DEL mixregls_both1.OUT mixregls_both2.OUT mixreg.est mixreg.var mixreg.def mixreg.lik")
-    if(mls .eq. 1) call system("del mixregls_both3.OUT")
-#else
-    CALL SYSTEM("rm mixregls_both1.OUT")
-    CALL SYSTEM("rm mixregls_both2.OUT")
-    CALL SYSTEM("rm mixreg.est")
-    CALL SYSTEM("rm mixreg.var")
-    CALL SYSTEM("rm mixreg.def")
-    CALL SYSTEM("rm mixreg.lik")
-    if(mls .eq. 1) call system("rm mixregls_both3.OUT")
-#endif
-
-#if defined(_WIN32)
+    
     call system("mkdir work")
     call system("move mixregls_both_* work")
-#else
-    call system("mkdir work")
-    call system("mv mixregls_both_* work")
-#endif
 end program mixregls_both
 
 subroutine readdef_both()
@@ -69,13 +31,13 @@ subroutine readdef_both()
     use procedures
     implicit none
     INTEGER :: I,j,k
-
+    
     OPEN(1, FILE='lsboth_random_mixblank.def')
     READ(1,'(18A4)') HEAD
     READ(1,'(A80)')FILEDAT
     READ(1,'(A80)')FILEprefix
     filedef = trim(fileprefix)//".def"
-    fileout = trim(fileprefix)//".out"
+    fileout = trim(fileprefix)//"_stage1.out"
     filedat = adjustl(filedat)
 
     READ(1,*) NVAR,P,R,S,PNINT,RNINT,SNINT,pv,rv, sv, CONV, NQ, AQUAD, MAXIT, yMISS, NCENT, ncov, &
@@ -106,10 +68,10 @@ subroutine readdef_both()
 ! r        =  number of random effect variance terms
 ! s        =  number of error variance terms
 ! pnint    =  1 if no intercept for mean model (0 otherwise)
-! rnint    = 1 if no intercept for BS variance model
+! rnint    = 1 if no intercept for BS variance model 
 ! snint    = 1 if no intercept for WS variance model
 ! ncent    =  1 for standardizing of all RHS variables (0 for no standardizing)
-
+   
      READ(1,*) ID2IND, YIND
 
      IF (P .GE. 1) THEN
@@ -197,9 +159,9 @@ subroutine readdef_both()
     NQwR1 = NQ**ndim
     nqwR0 = nq**numloc
     select case(stage2)
-        case(1,3)
+        case(1,3)     
             readcats = 0
-        case(2,4)
+        case(2,4) 
             readcats = 1
         case default
             stage2 = 0
@@ -425,7 +387,7 @@ SUBROUTINE READAT()
               ALLOCATE (IDNI(NC2,2))
               IDNI = 0
         ENDIF
-
+   
         I     = 1
         K     = 1
         MAXK  = 0
@@ -437,7 +399,7 @@ SUBROUTINE READAT()
         OPEN(1,ACTION='READ',FILE=FILEDAT)
 
         DO   ! loop forever
-
+        
               READ(1,*,END=1999)(TEMPR(myindex),myindex=1,NVAR)
                 hasmiss = 0
                 IF (MISS .EQ. 1) THEN
@@ -457,8 +419,8 @@ SUBROUTINE READAT()
               IDTEMP = INT(TEMPR(ID2IND))
               ! QUERY FOR NEW ID AND SET PARAMETERS ACCORDINGLY
 
-              IF (.NOT. FIRST) THEN
-                  ! if r=0 and rnint=1 then NO random effects
+              IF (.NOT. FIRST) THEN 
+                  ! if r=0 and rnint=1 then NO random effects 
                  IF (R .GE. 1 .AND. IDTEMP .EQ. IDOLD) THEN
                     K     = K+1
                  ELSE
@@ -533,7 +495,7 @@ SUBROUTINE READAT()
               END IF
 
         END DO   ! loop back to read next line
-
+        
     ! cleanup final entry
     1999  discardi = 0
                     if(r > 0 .and. discard0 == 1 .and. mypass .eq. 2) then
@@ -599,7 +561,7 @@ subroutine adjustdata()
         else
             alab(ll+j*2-1) = trim(varlabel(j+pv)) // "_BS"
             alab(ll+j*2) = trim(varlabel(j+pv)) // "_WS"
-        end if
+        end if            
     end do
     do j=1, sv
         ll = sold+1-snint
@@ -623,7 +585,7 @@ subroutine adjustdata()
                 else
                     u(ko,ll+j*2-1) = varavg(i,j+kv)
                     u(ko,ll+j*2) = var(ko,j+kv) - varavg(i,j+kv)
-                end if
+                end if            
             end do
             kv = kv + rv
             do j=1, sv
@@ -635,7 +597,7 @@ subroutine adjustdata()
     end do
     CALL SUBMANDV()
 end subroutine adjustData
-
+   
 SUBROUTINE PRINTDESC()
         use lsboth
     use procedures
@@ -668,7 +630,7 @@ SUBROUTINE PRINTDESC()
      end if
              IUN    = 16
              OPEN(UNIT=IUN,FILE="mixREGLS_both1.OUT")
-
+             
              WRITE(IUN,'("MIXREGLS_both: Mixed-effects Location Scale Model")')
              write (IUN,*)
              WRITE(IUN,'("-----------------------------")')
@@ -680,7 +642,8 @@ SUBROUTINE PRINTDESC()
              WRITE(IUN,"(1x,a80)")FILEDAT
              WRITE(IUN,"(1x,a80)")FILEOUT
              WRITE(IUN,*)
-             WRITE(IUN,"(' MULITPLE LOCATION EFFECTS  = ',L1)")mls .eq. 1
+             WRITE(IUN,"(' MULTIPLE LOCATION EFFECTS  = ',L1)")mls .eq. 1
+             WRITE(IUN,"(' SCALE EFFECT  = ',L1)")nors .ne. 1
              WRITE(IUN,"(' CONVERGENCE CRITERION = ',F11.8)")CONV
              WRITE(IUN,"(' RIDGEIN    = ',F8.4)")RIDGEIN
              WRITE(IUN,"(' NQ         = ',I4)")NQ
@@ -703,25 +666,25 @@ SUBROUTINE PRINTDESC()
              write(IUN,'(" Number of level-1 observations for each level-2 cluster")')
              write(IUN,'(1x,13I6)') (IDNI(i,2), i=1,nc2)
 
-        200  FORMAT(1x,A16,4F12.4)
+        200  FORMAT(1x,A24,4F12.4)
 
              WRITE(IUN,*)
              WRITE(IUN,'(" Dependent variable")')
-             WRITE(IUN,'("                 mean         min         max     std dev")')
-             WRITE(IUN,'(" --------------------------------------------------------")')
+             WRITE(IUN,'("                         mean         min         max     std dev")') 
+             WRITE(IUN,'(" ----------------------------------------------------------------")')
              WRITE(IUN,200) YLABEL,meany,miny,maxy,stdy
              WRITE(IUN,*)
 
              if (ncent==1) then
-                WRITE(IUN,'(" ==> Standardization of covariates has been selected")')
-                WRITE(IUN,'(" ==> All covariates have mean=0 and std dev=1")')
-                WRITE(IUN,'(" ==> Means and std devs listed below are pre-standardization")')
+                WRITE(IUN,'(" ==> Standardization of covariates has been selected")') 
+                WRITE(IUN,'(" ==> All covariates have mean=0 and std dev=1")') 
+                WRITE(IUN,'(" ==> Means and std devs listed below are pre-standardization")') 
                 WRITE(IUN,*)
              end if
              if (p>0) then
                 WRITE(IUN,'(" Mean model covariates")')
-                WRITE(IUN,'("                 mean         min         max     std dev")')
-                WRITE(IUN,'(" --------------------------------------------------------")')
+             WRITE(IUN,'("                         mean         min         max     std dev")') 
+             WRITE(IUN,'(" ----------------------------------------------------------------")')
                 do i=1,p
                    WRITE(IUN,200) BLAB(i),meanx(i),minx(i),maxx(i),stdx(i)
                 end do
@@ -730,8 +693,8 @@ SUBROUTINE PRINTDESC()
 
              if (r>0) then
                 WRITE(IUN,'(" BS variance model covariates")')
-                WRITE(IUN,'("                 mean         min         max     std dev")')
-                WRITE(IUN,'(" --------------------------------------------------------")')
+             WRITE(IUN,'("                         mean         min         max     std dev")') 
+             WRITE(IUN,'(" ----------------------------------------------------------------")')
                 do i=1,r
                    WRITE(IUN,200) ALAB(i),meanu(i),minu(i),maxu(i),stdu(i)
                 end do
@@ -740,8 +703,8 @@ SUBROUTINE PRINTDESC()
 
              if (s>0) then
                 WRITE(IUN,'(" WS variance model covariates")')
-                WRITE(IUN,'("                 mean         min         max     std dev")')
-                WRITE(IUN,'(" --------------------------------------------------------")')
+             WRITE(IUN,'("                         mean         min         max     std dev")') 
+             WRITE(IUN,'(" ----------------------------------------------------------------")')
                 do i=1,s
                    WRITE(IUN,200) TLAB(i),meanw(i),minw(i),maxw(i),stdw(i)
                 end do
@@ -751,12 +714,12 @@ SUBROUTINE PRINTDESC()
         CLOSE(IUN)
 END SUBROUTINE PRINTDESC
 
-
+    
 SUBROUTINE mixregmlsEST()
         use lsboth
         use procedures
         implicit none
-
+        
         INTEGER :: I,J,LL,l2,k,kk,PP,SS,ii,jj, &
                 IUN,CYCLES,NCYCLE,RP2,RPS2,NQ1,NS2,IFIN,ITER,NN, &
                    Q,NOB,IER,RIDGEIT,IUNS,myqdim,totalqR0,totalqR1,mytotalq,&
@@ -775,7 +738,7 @@ SUBROUTINE mixregmlsEST()
                                    cholTheta(:),uth(:),uthfull(:),mycholspar(:),mycholspar2(:),&
                                    sstar(:,:), work(:,:), sigma(:),asstar2(:,:),adjVar(:,:)
         character(len=80)::templabel
-
+                                    
 
 
             ! parameters
@@ -795,7 +758,7 @@ SUBROUTINE mixregmlsEST()
         IUNS    = 17
         OPEN(UNIT=IUNS,FILE="mixREGLS_both_details_.ITS")
         open(unit=18, file="MixRegls_both_.its")
-
+        
     ! number of quadrature points, quadrature nodes & weights
 
         ! ALLOCATE VECTORS FOR NR (these don't vary by CYCLES)
@@ -879,13 +842,13 @@ SUBROUTINE mixregmlsEST()
         ! start cycles
         ! cycles = 1: random intercept model with BS variance terms
         ! cycles = 2: add in scale (WS) variance terms
-        ! cycles = 3: add in random scale
+        ! cycles = 3: add in random scale 
         ! cycles = 4: use NS = R+1
 
         OPEN(UNIT=IUN,FILE="MIXREGLS_both2.OUT")
         ncycle = 4
         CYCLELOOP:do cycles=2,ncycle
-            if(cycles > 2 .and. nors==1) cycle
+            if(cycles > 2 .and. nors==1) exit
         if (CYCLES==2) THEN
                 WRITE(IUN,*)
                 WRITE(IUN,*)
@@ -988,7 +951,7 @@ SUBROUTINE mixregmlsEST()
                     ridge = ridge - .1
                 END IF
                  if(ridge < 0) ridge = 0 !To get rid of -0 values
-
+                 
             !
             ! calculate the derivatives and information matrix
             !
@@ -1011,7 +974,7 @@ SUBROUTINE mixregmlsEST()
                     NQ1=NQ
 
                    ! modify the points and weights for adaptive quadrature
-
+            
                     mypoints = mypoints0
                     myweights = myweights0
                     if(aquad .ne. 0 .and. (iter >= 8 .or. cycles .eq. 2 .or. cycles .eq. 4)) then
@@ -1026,9 +989,9 @@ SUBROUTINE mixregmlsEST()
                              end do
                          end do
                     end if
-
+                   
                     QLOOP:DO Q=1, mytotalq  ! go over quadrature points
-
+                           
                         PSUM     = 0.0D0
                         DERQ(1:npar)  = 0.0D0
                         DERQ2(1:npar2) = 0.0D0
@@ -1048,12 +1011,12 @@ SUBROUTINE mixregmlsEST()
 
                             WT = DOT_PRODUCT(TAU(1:S),W(NOB,1:S))  ! W TAU for the current LEVEL-1 obs
                                                                    ! note that S changes over CYCLES
-
+                                                                   
                             !mytheta is the quadrature points vector for spar
                             if(cycles >= 3) then
                                 mytheta(1:ns) = mypoints(q,(R+1+1-ns):(R+1))
                             end if
-
+                                                                   
                             if(ns > 0) then
                                 RTEMP = WT + DOT_PRODUCT(mytheta(1:ns), spar(1:ns))
                                 IF (RTEMP .GE. LOGBIG) THEN
@@ -1066,11 +1029,11 @@ SUBROUTINE mixregmlsEST()
                                   WSVAR = BIG
                                ELSE
                                   WSVAR = DEXP(WT)
-                               END IF
+                               END IF               
                             END IF
-
+                            
                             !Uth is equivalent to JR* in the equations
-!                            call mpytr(u(nob,:), mypoints(q,1:R), uthfull,1,R,0,R)
+!                            call mpytr(u(nob,:), mypoints(q,1:R), uthfull,1,R,0,R) 
             !               call chams0to1(uthfull, uth, R)
 !                            call chams(uthfull,uth,r,0,3)
                             ii=0
@@ -1082,9 +1045,9 @@ SUBROUTINE mixregmlsEST()
                                 end do
                             end do
 
-
+                            
                             ERRIJ = Y(NOB) - (XB + uchth) !uchth replaces ua
-                            IF (WSVAR .LE. SMALL) WSVAR = SMALL
+                            IF (WSVAR .LE. SMALL) WSVAR = SMALL   
                             LPROB = -.5D0*(DLOG(2.0D0*PI)+DLOG(WSVAR) + ERRIJ**2/WSVAR)
                             PSUM  = PSUM + LPROB
                              DZ(1:P) = (-2.0D0/WSVAR)*ERRIJ*X(NOB,:)                    ! beta
@@ -1092,7 +1055,7 @@ SUBROUTINE mixregmlsEST()
                             DZ(P+Rr+1:P+Rr+S) = (1.0D0 - (ERRIJ**2/WSVAR))*W(NOB,1:S)    ! tau
                             if(ns > 0) dz(p+rr+s+1:p+rr+s+ns) = (1.0D0 - (ERRIJ**2/WSVAR))*mytheta(1:ns) ! sparam
 
-            !write(IUNS,'(17F8.3)') i*1.0,q*1.0,j*1.0,mypoints(q,1),lprob,psum,errij,y(nob),xb,uchth,wt,(dz(k), k=1,npar)
+            !write(IUNS,'(17F8.3)') i*1.0,q*1.0,j*1.0,mypoints(q,1),lprob,psum,errij,y(nob),xb,uchth,wt,(dz(k), k=1,npar)                
                             DERQ(1:npar) = DERQ(1:npar) + (-.5D0)*DZ(1:npar)
 !write(iuns,*) errij,dz(1:npar),derq(1:npar),w(nob,1:s)
 
@@ -1158,12 +1121,12 @@ SUBROUTINE mixregmlsEST()
 
                         IF (PSUM .GE. LOGBIG) THEN
                              LIK(I,Q) = BIG
-                        ELSE
+                        ELSE 
                              LIK(I,Q) = DEXP(PSUM)
                         END IF
 
                         rtemp2 = myweights(q)
-                        IF (RTEMP2 .LE. SMALL) RTEMP2 = SMALL
+                        IF (RTEMP2 .LE. SMALL) RTEMP2 = SMALL            
                         PRA   = DEXP(PSUM + DLOG(RTEMP2))
                         H(I)     = H(I) + PRA
                         DERP     = DERP + DERQ*PRA
@@ -1171,6 +1134,7 @@ SUBROUTINE mixregmlsEST()
                         CALL GRAM(DERQ,DERQQ,NPAR,1)
                         DERP2 = DERP2 + ((DERQQ + DERQ2)*PRA)
 
+!if(iter==1) write(iuns,'(2i3,18F10.3)') i,q,psum,exp(psum),myweights(q),pra,h(i),(derq(k),k=1,npar)
             !if(ns > 0) write(IUNS,'(18F10.3)') i*1.0, q*1.0, psum, rtemp2,pra,h(i),(derq(k), k=1,npar),derp2(npar2),derq2(npar2)
             !if(ns == 0) write(IUNS,'(18F10.3)') i*1.0, q*1.0, psum, rtemp2,pra,h(i),(derq(k), k=1,npar)
                     END DO QLOOP
@@ -1270,7 +1234,7 @@ SUBROUTINE mixregmlsEST()
                     write(IUNS,'(25f10.2)') (der2b(ll+kk), kk=1,k)
                     ll = ll + k
                 end do
-
+                
                  ! INVERT 2nd DERIVATIVE MATRIX - COREC is a working vector for INVS
                  IF (IFIN == 1) THEN
                     CALL INVS(DER2B,NPAR,DET,IER)
@@ -1342,7 +1306,7 @@ SUBROUTINE mixregmlsEST()
                     if(ns > 1) then
                         spar(1:ns-1) = spar(1:ns-1) + corec(npar-ns+1:npar-1)*.5
                     end if
-                    if(ns > 0 .and. iter > 5) then
+                    if(ns > 0 .and. iter > 10) then
                         spar(ns) = spar(ns) + corec(npar)*.5
                     else if(ns > 0) then
                         corec(npar) = 0
@@ -1362,7 +1326,7 @@ SUBROUTINE mixregmlsEST()
                  WRITE(18,'("   -2 Log-Likelihood = ",F14.5)') -2*LOGL
                  ITER = ITER+1
             END DO IFINLOOP
-
+                 
         if(cycles .ne. 3) then
 write(iuns,*) "Original var/covar values"
                 ll = 0
@@ -1386,7 +1350,7 @@ write(iuns,*) "Original var/covar values"
                     ii=ii+1
                 end do
             end do
-            if(cycles >= 3) then
+            if(cycles >= 3) then 
                 mycholspar(rr+1:rr+ns) = spar(1:ns)
                 sigma(rr+1:rr+ns) = spar(1:ns)
                 if(chol .ne. 1 .and. chol .ne. 2) then
@@ -1448,7 +1412,7 @@ write(iuns,*) "Original var/covar values"
 do i=1,npar
     write(iuns,'(20F15.8)') (myder2sq(i,j), j=1,npar)
 end do
-                work(1:npar,1:npar) = matmul(asstar2(1:npar,1:npar), myder2sq(1:npar,1:npar))
+                work(1:npar,1:npar) = matmul(asstar2(1:npar,1:npar), myder2sq(1:npar,1:npar))        
                 adjVar(1:npar,1:npar) = matmul(work(1:npar,1:npar),&
                                                 transpose(asstar2(1:npar,1:npar)))
             else
@@ -1459,7 +1423,7 @@ end do
             DO k=1,npar
                 se(k) = dsqrt(dabs(adjvar(k,k)))
             END DO
-
+            
                  ! WRITE RESULTS
             WRITE(IUN,562)ITER-1,ORIDGE,LOGL,LOGL-NPAR, &
             LOGL-0.5D0*DBLE(NPAR)*DLOG(DBLE(NC2)),0-2*LOGL,0-2*(LOGL-NPAR), &
@@ -1511,11 +1475,11 @@ end do
 
             804 FORMAT(A16,4(4x,F12.5))
                 write(iun,*)
-            IF (NCENT==1 .AND. S>1) THEN
+            IF (NCENT==1 .AND. S>1) THEN 
                      WRITE(IUN,'("STANDARDIZED TAU (WS variance parameters: log-linear model)")')
                  ELSE
                      WRITE(IUN,'("TAU (WS variance parameters: log-linear model)")')
-                 END IF
+                 END IF 
                  DO k=1,S
                     L2 = P+RR+k
                     ZVAL = TAU(k)/SE(L2)
@@ -1562,7 +1526,7 @@ write(iuns,*) (myorder2(k),k=1,ndim2)
         close(IUN)
         OPEN(UNIT=IUN,FILE="MIXREGLS_both2.OUT",access="append")
      END DO CYCLELOOP
-
+     
      write(iun,*)
      write(iun,*)
      write(iun,*)
@@ -1587,7 +1551,7 @@ write(iuns,*) (myorder2(k),k=1,ndim2)
          CLOSE(2)
          CLOSE(3)
          close(18)
-
+    
     open(23,file=trim(fileprefix)//"_ebvar.dat")
     k=myqdim*(myqdim+1)/2
     DO I=1,NC2  ! go over level-2 clusters
@@ -1605,7 +1569,7 @@ write(iuns,*) (myorder2(k),k=1,ndim2)
         deallocate(cholTheta,mytheta,lik,h,corec,se,theta,thetav,work2,work3,uthfull,uth)
         deallocate(sstar,work,adjvar,asstar2,sigma,mycholspar)
 END SUBROUTINE MIXREGmLSEST
-
+    
 SUBROUTINE mixREGLSEST()
     use lsboth
     use procedures
@@ -1711,13 +1675,13 @@ SUBROUTINE mixREGLSEST()
         ! start cycles
         ! cycles = 1: random intercept model with BS variance terms
         ! cycles = 2: add in scale (WS) variance terms
-        ! cycles = 3: add in random scale
+        ! cycles = 3: add in random scale 
         ! cycles = 4: use NS = R+1
 
         ncycle = 4
         CYCLELOOP:do cycles=1,ncycle
-            if(cycles==4 .and. ncov0==0) cycle
-
+            if(cycles==4 .and. ncov0==0) exit
+            if(cycles > 2 .and. nors .eq. 1) exit            
             if (cycles==1) then
                 WRITE(IUN,*)
                 WRITE(IUN,*)
@@ -1853,7 +1817,7 @@ SUBROUTINE mixREGLSEST()
                     ridge = ridge - .05
                 END IF
                  if(ridge < 0) ridge = 0 !To get rid of -0 values
-
+                 
             !
             ! calculate the derivatives and information matrix
             !
@@ -1876,7 +1840,7 @@ SUBROUTINE mixREGLSEST()
                     NQ1=NQ
 
                    ! modify the points and weights for adaptive quadrature
-
+            
                     mypoints = mypoints0
                     myweights = myweights0
                     if(aquad .ne. 0 .and. (iter > 8 .or. cycles .eq. 2 .or. cycles .eq. 4)) then
@@ -1891,9 +1855,9 @@ SUBROUTINE mixREGLSEST()
                              end do
                          end do
                     end if
-
+                   
                     QLOOP:DO Q=1, mytotalq  ! go over quadrature points
-
+                           
                         PSUM     = 0.0D0
                         DERQ(:)  = 0.0D0
                         DERQ2(:) = 0.0D0
@@ -1905,7 +1869,7 @@ SUBROUTINE mixREGLSEST()
                             UA = DOT_PRODUCT(ALPHA,U(NOB,:))       ! U ALPHA for the current LEVEL-1 obs
                             WT = DOT_PRODUCT(TAU(1:S),W(NOB,1:S))  ! W TAU for the current LEVEL-1 obs
                                                                    ! note that S changes over CYCLES
-                            vaug = 0
+                            vaug = 0                                       
                             !vaug is the derivative vector for the s parameters
                             if(cycles >= 3) then
                                 if(ncov>=1) vaug(1) = mypoints(q,1)
@@ -1925,15 +1889,15 @@ SUBROUTINE mixREGLSEST()
                             ELSE
                               WSVAR = DEXP(RTEMP)
                             END IF
-
+                                                       
                             IF (UA .GE. LOGBIG) THEN
                                   BSVAR = BIG
-                            ELSE
+                            ELSE 
                                   BSVAR = DEXP(UA)
                             END IF
                             IF (BSVAR .LE. SMALL) BSVAR = SMALL
                             ERRIJ = Y(NOB) - (XB + DSQRT(BSVAR)*mypoints(q,1))
-                            IF (WSVAR .LE. SMALL) WSVAR = SMALL
+                            IF (WSVAR .LE. SMALL) WSVAR = SMALL   
                             LPROB = -.5D0*(DLOG(2.0D0*PI)+DLOG(WSVAR) + ERRIJ**2/WSVAR)
                             PSUM  = PSUM + LPROB
                             ! GET FIRST DERIVATIVES
@@ -1942,7 +1906,7 @@ SUBROUTINE mixREGLSEST()
                             DZ(P+R+1:P+r+S) = (1.0D0 - (ERRIJ**2/WSVAR))*W(NOB,1:S)    ! tau
                             if(ns > 0) dz(p+r+s+1:p+r+s+ns) = (1.0D0 - (ERRIJ**2/WSVAR))*vaug(1:ns) ! sparam
 
-            !write(IUNS,'(17F8.3)') i*1.0,q*1.0,j*1.0,mypoints(q,1),lprob,psum,errij,y(nob),xb,uchth,wt,(dz(k), k=1,npar)
+            !write(IUNS,'(17F8.3)') i*1.0,q*1.0,j*1.0,mypoints(q,1),lprob,psum,errij,y(nob),xb,uchth,wt,(dz(k), k=1,npar)                
                             DERQ = DERQ + (-.5D0)*DZ
 
                             ! 2ND DERIVATIVE MATRIX  (NEWTON RAPHSON)
@@ -1999,18 +1963,19 @@ SUBROUTINE mixREGLSEST()
 
                         IF (PSUM .GE. LOGBIG) THEN
                              LIK(I,Q) = BIG
-                        ELSE
+                        ELSE 
                              LIK(I,Q) = DEXP(PSUM)
                         END IF
 
                         rtemp2 = myweights(q)
-                        IF (RTEMP2 .LE. SMALL) RTEMP2 = SMALL
+                        IF (RTEMP2 .LE. SMALL) RTEMP2 = SMALL            
                         PRA   = DEXP(PSUM + DLOG(RTEMP2))
                         H(I)     = H(I) + PRA
                         DERP     = DERP + DERQ*PRA
 
                         CALL GRAM(DERQ,DERQQ,NPAR,1)
                         DERP2 = DERP2 + ((DERQQ + DERQ2)*PRA)
+!if(iter==1) write(iuns,'(2i3,18F15.3)') i,q,psum,exp(psum),myweights(q),pra,h(i),(derq(k),k=1,npar)
 
             !if(ns > 0) write(IUNS,'(18F10.3)') i*1.0, q*1.0, psum, rtemp2,pra,h(i),(derq(k), k=1,npar),derp2(npar2),derq2(npar2)
             !if(ns == 0) write(IUNS,'(18F10.3)') i*1.0, q*1.0, psum, rtemp2,pra,h(i),(derq(k), k=1,npar)
@@ -2063,20 +2028,18 @@ SUBROUTINE mixREGLSEST()
         ridge = ridgein
      END IF
                  if(maxder < 1 .and. iter > 10) ridge = 0
-
+!der2b = 0
+                     DER2B = DER2A - DER2B
                 if(ifin < 2) then
                      ! ridge adjustment - diagonal elements only
-                     DO L=1,NPAR
-                        LL=(L*(L+1))/2
-                        DER2A(LL)=DER2A(LL)+RIDGE*DER2A(LL)
-                     END DO
-                     DER2B = DER2A - DER2B
+!                     DO L=1,NPAR
+!                        LL=(L*(L+1))/2
+!                        DER2A(LL)=DER2A(LL)+RIDGE*DER2A(LL)
+!                     END DO
                      DO L=1,NPAR
                         LL=(L*(L+1))/2
                         DER2B(LL)=DER2B(LL)+RIDGE*DER2B(LL)
                      END DO
-                else
-                    DER2B = DER2A - DER2B
                 end if
 
                 write(IUNS,*)"2nd Derivatives"
@@ -2155,20 +2118,20 @@ SUBROUTINE mixREGLSEST()
                         spar(k) = spar(k) + corec(npar-ns+k)
                     end do
                 end if
-                 IF (S==1) THEN
+                 IF (S==1) THEN 
                      TAU(1)= TAU(1)   + COREC(P+R+1)
                  ELSE IF (S>1) THEN
                      TAU   = TAU      + COREC(P+R+1:P+R+S)
-                 END IF
+                 END IF 
 
-
+                
 
             99  WRITE(*,'("   -2 Log-Likelihood = ",F14.5)') -2*LOGL
                  WRITE(IUNS,'("   -2 Log-Likelihood = ",F14.5)') -2*LOGL
                  WRITE(18,'("   -2 Log-Likelihood = ",F14.5)') -2*LOGL
                  ITER = ITER+1
             END DO IFINLOOP
-
+                 
             if((cycles .ne. 3) .or. (cycles == 3 .and. ncov0 == 0)) then
                  ! WRITE RESULTS
                WRITE(IUN,562)ITER-1,ORIDGE,LOGL,LOGL-NPAR, &
@@ -2187,10 +2150,10 @@ SUBROUTINE mixREGLSEST()
  57 FORMAT(/,'Variable',12x,'    Estimate',4X,'AsymStdError',4x, &
           '     z-value',4X,'     p-value',/,'----------------',4x,  &
           '------------',4X,'------------',4X,'------------',4X,'------------')
-
+            
                  PVAL=0.0D0
                  ZVAL=0.0D0
-
+            
                  IF (NCENT==1 .AND. P>1) THEN
                      WRITE(IUN,'("STANDARDIZED BETA (regression coefficients)")')
                  ELSE
@@ -2201,7 +2164,7 @@ SUBROUTINE mixREGLSEST()
                     PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL),0))
                         WRITE(IUN,804)BLAB(L),BETA(L),SE(L),ZVAL,PVAL
                  END DO
-
+            
                  IF (NCENT==1 .AND. R>1) THEN
                      WRITE(IUN,'("STANDARDIZED ALPHA (BS variance parameters: log-linear model)")')
                  ELSE
@@ -2213,18 +2176,18 @@ SUBROUTINE mixREGLSEST()
                     PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL),0))
                         WRITE(IUN,804)ALAB(L),ALPHA(L),SE(L2),ZVAL,PVAL
                  END DO
-                 IF (NCENT==1 .AND. S>1) THEN
+                 IF (NCENT==1 .AND. S>1) THEN 
                      WRITE(IUN,'("STANDARDIZED TAU (WS variance parameters: log-linear model)")')
                  ELSE
                      WRITE(IUN,'("TAU (WS variance parameters: log-linear model)")')
-                 END IF
+                 END IF 
                  DO L=1,S
                     L2 = P+R+L
                     ZVAL = TAU(L)/SE(L2)
                     PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL),0))
                         WRITE(IUN,804)TLAB(L),TAU(L),SE(L2),ZVAL,PVAL
                  END DO
-
+            
                  IF (cycles==4 .or. (cycles==3 .and. ncov0==0)) THEN
                     WRITE(IUN,'("Random scale standard deviation")')
                     L2=P+R+S+ncov+1
@@ -2250,7 +2213,7 @@ SUBROUTINE mixREGLSEST()
                     end if
                 end if
              804 FORMAT(A16,4(4x,F12.5))
-
+            
                          IF (MAXDER > CONV .AND. ITER >= MAXIT) THEN
                             WRITE(IUN,'("NOTE: CONVERGENCE CRITERION WAS NOT ACHIEVED")')
                             WRITE(IUN,'("FINAL FIRST DERIVATIVE AND CORRECTION VALUES")')
@@ -2258,7 +2221,7 @@ SUBROUTINE mixREGLSEST()
                               WRITE(IUN,*)DER(L),COREC(L)
                             END DO
                          END IF
-
+    
                  ! write out the deviance, estimates, and standard errors
                  IF (CYCLES.EQ.1) OPEN(2, FILE='mixREGLS_both_.EST')
                     WRITE(2,'(F15.6,2I8)') -2*LOGL,ITER-1,MAXIT
@@ -2318,14 +2281,15 @@ SUBROUTINE mixREGLSEST()
             end if
         end if
     write(iun,*)
+    if(ns > 0) then
         WRITE(IUN,'("Random scale standard deviation")')
         L2=P+R+S+ns
         tauhat = exp(spar(ns))
         tauhatlow = exp(spar(ns)-myz*se(l2))
         tauhatup = exp(spar(ns)+myz*se(l2))
         WRITE(IUN,804)'Std Dev                 ',tauhat, tauhatlow, tauhatup
-
-
+    end if         
+           
          CLOSE(IUN)
          CLOSE(IUNS)
          CLOSE(1)
@@ -2363,15 +2327,15 @@ subroutine callmixreg
     use procedures
     implicit none
     integer::i,j,iun,counter,myio,k
-    real(kind=8)::temp,logl,pval,zval,se(p+rr+1),temp3(2+rr+r+p),v(rr)
+    real(kind=8)::temp,logl,pval,zval,se(p+rr+1),temp3(2+rr+r+p),vx(rr)
     CHARACTER(LEN=16)::templabel
-
+    
     open(10,file="mixregls_both_temp_.dat")
     do i=1,nobs
         write(10,*) ids(i), y(i), (x(i,j),j=1,p), (u(i,j),j=1,numloc)
     end do
     close(10)
-
+    
     OPEN(1,FILE="mixreg.def")
     WRITE(1,'(18A4)') HEAD
     WRITE(1,'("mixregls_both_temp_.dat")')
@@ -2393,24 +2357,15 @@ subroutine callmixreg
         allocate(spar(max(ndim,1+ncov)))
         tau = 0
         spar = 0
-        spar(1) = abs(log(sdlv))
+        spar(1) = .4!abs(log(sdlv))
     ALLOCATE (THETAs(NC2,ndim))
     ALLOCATE (thetavs(NC2,ndim2))
 
-    write(*,*) "Calling mixreg binary"
-#if defined(_WIN32)
        CALL SYSTEM("MIXREG.EXE > mixregls_both_temp_")
-#else
-       CALL SYSTEM("./mixreg > mixregls_both_temp_")
-#endif
-   write(*,*) "Finished mixreg binary"
        open(unit=1,file="mixreg.lik")
        read(1,*) logl, npar
        close(1)
-       if(npar < p+rr+1) then
-         write(*,*) "Stopping, npar < p+rr"
-         stop
-       end if
+       if(npar < p+rr+1) stop
        open(unit=1,file="mixreg.est")
        do i=1,npar
             read(1,*) templabel, temp
@@ -2418,19 +2373,19 @@ subroutine callmixreg
                 beta(i) = temp
             else if (i .le. p+rr) then
                 mychol(i-p) = temp
-                if(mls .eq. 1) v(i-p) = temp
+                if(mls .eq. 1) vx(i-p) = temp
             else if (i .eq. p+rr+1) then
                 tau(1) = log(temp)
             end if
         end do
        close(1)
 
-        if(mls .ne. 1) then
+        if(mls .ne. 1) then       
             allocate(alpha(r))
             alpha = 0
             alpha(1) = log(mychol(1))
         else
-
+       
            open(unit=1,file="mixreg.var")
            do i=1,p
                 read(1,*) (temp3(j), j=1,p)
@@ -2442,7 +2397,7 @@ subroutine callmixreg
            end do
            close(1)
 !           deallocate(temp3)
-
+           
 !           allocate(temp3(2+r+rr))
            open(unit=1,file="mixregls_both_temp_.ebv")
            do i=1,nc2
@@ -2456,7 +2411,7 @@ subroutine callmixreg
            end do
            close(1)
 !           deallocate(temp3)
-
+           
         IUN    = 16
         OPEN(UNIT=IUN,FILE="mixregls_both3.OUT")
                 WRITE(IUN,*)
@@ -2524,596 +2479,15 @@ subroutine callmixreg
          close(2)
 
 !        v = mychol
-           call CHSKY(v,mychol,r,myio)
+           call CHSKY(vx,mychol,r,myio)
     end if
 end subroutine callmixreg
-
-subroutine dostage2
-    use lsboth
-    use procedures
-    implicit none
-    CHARACTER(LEN=80) :: filetempdat,temp80
-    integer :: i,n,j,k,diffk,totalvar,catcount(maxj),ni(nc2),myobs,ii,nvalid,&
-                jlabel,jval,nvarpercat,nobs2,ncolinvar,nc2a
-    REAL(KIND=8),ALLOCATABLE:: temp3(:),liks(:),tempdata(:),&
-                                betas(:,:),meanbetas(:),totalvarhats(:),varbetas(:)
-    real(kind=8) :: logl,loglsd,zval,pval,meany,miny,maxy,temp,stdy,seval
-    character(len=24) :: mystr,progname
-    REAL(KIND=8),ALLOCATABLE:: tempVector(:)
-
-    ni = 1
-    nvalid = 0
-    nc2a = nc2
-    write(*,*) "There are ",sum(allzeros),"subjects with unestimable random effects"
-    if(multi2nd .eq. 1) then
-        write(*,*) "Multilevel second stage"
-        ni = idni(:,2)
-        nobs2 = nobs
-        if(sepfile .eq. 1) then
-            j=0
-            do i=1,nc2
-                if(idni(i,1) .eq. idnisep(i+j,1)) then
-                    ni(i) = idnisep(i+j,2)
-                else
-                    ni(i) = 0
-                    j = j - 1
-                    nc2a = nc2a - 1
-                end if
-                write(*,*) i,i+j, idni(i,1), idnisep(i+j,1),ni(i)
-            end do
-        end if
-        nobs2 = sum(ni)
-    else
-        write(*,*) "Second stage"
-        nobs2 = nc2
-        if(sepfile .eq. 1) then
-            j=0
-            do i=1,nc2
-                if(idni(i,1) .ne. idnisep(i+j,1)) then
-                    ni(i) = 0
-                    j = j - 1
-                end if
-            end do
-            nobs2 = sum(ni)
-        end if
-        data2(1:nobs2,1:nvar2) = tempsums(1:nobs2,1:nvar2)
-        nc2a = nobs2
-    end if
-    nvarpercat = nvar3-1+multi2nd
-    write(*,*) nobs,nc2,nobs2,nc2a
-        allocate(tempdata(nvar3))
-        allocate(intLabel(nvar3+2+max(maxj-1,0)))
-        intlabel(1) = var2label(1)
-        intlabel(2) = "Intercept             "
-        intlabel(3:pfixed+3) = var2label(2:1+pfixed)
-        do j=1,numloc
-            write(mystr, '(A6, I1, A17)') "Locat_",j,"                 "
-            intLabel(1+Pfixed+1+(Ptheta+1)*(j-1)+1) = mystr
-            do i=1,pTheta
-                write(mystr, '(A6, I1, A17)') "Locat_",j,"*"//var2label(1+pfixed+i)
-                intlabel(1+pfixed+1+(Ptheta+1)*(j-1)+1+i) = mystr
-            end do
-        end do
-        if(pOmega >= 0) intlabel(1+pfixed+1+(1+Ptheta)*numloc+1) = "Scale                 "
-        if(pOmega > 0) intlabel(1+pfixed+1+(1+Ptheta)*numloc+2:1+pfixed+1+(1+Ptheta)*numloc+1+pomega) = &
-            "Scale*"//var2label(1+pfixed+ptheta+1:1+pfixed+ptheta+pomega)
-        if(pTO >= 0) then
-            do j=1,numloc
-                write(mystr, '(A6, I1, A17)') "Locat_",j,"*Scale                 "
-                intlabel(1+pfixed+1+(1+Ptheta)*numloc+1+pomega+(j-1)*(pto+1)+1) = mystr
-                do k=1, pto
-                    write(mystr, '(A6, I1, A17)') "Locat_",j,"*S*"//trim(var2label(1+pfixed+ptheta+pomega+k))
-                    intlabel(1+pfixed+1+(1+Ptheta)*numloc+1+pomega+(j-1)*numloc+1+k) = mystr
-                end do
-            end do
-        end if
-        intLabel(nvar3+1) = "Random.Int.Var"
-        intLabel(nvar3+1+multi2nd) = "Residual.Variance"
-        if(stage2 .eq. 2 .and. maxj > 2) then
-            intLabel(nvar3+maxj) = "Random.Int.Var"
-            do j=1,maxj-1
-                write(mystr,'(a10,f8.3,a6)') "Threshold ",icode(j+1),"      "
-                intLabel(nvar3+j) = mystr
-            end do
-        end if
-
-        open(3, file=trim(fileprefix)//'_desc2.out')
-         ALLOCATE(tempVector(nobs2))
-    200  FORMAT(1x,A16,4F12.4)
-!    write(3,9) head
-!    write(3,*)
-    write(3,*) "Level 2 units =",nc2a
-    if(multi2nd .eq. 1) write(3,*) "Level 1 observations =",nobs2
-        WRITE(3,'("------------")')
-         WRITE(3,'("Descriptives")')
-         WRITE(3,'("------------")')
-         WRITE(3,*)
-
-        if(stage2 .eq. 1 .or. stage2 .eq. 3) then
-            meany=SUM(data2(1:nobs2,1))/DBLE(nobs2)
-             miny=minval(data2(1:nobs2,1))
-             maxy=maxval(data2(1:nobs2,1))
-             tempVector(:)=(data2(1:nobs2,1)-meany)**2
-             temp=SUM(tempVector)/DBLE(nobs2-1)
-             stdy=DSQRT(TEMP)
-             WRITE(3,'(" Dependent variable")')
-             WRITE(3,'("                         mean         min         max     std dev")')
-             WRITE(3,'(" ----------------------------------------------------------------")')
-             WRITE(3,200) var2Label(1),meany,miny,maxy,stdy
-        else
-            catcount = 0
-            do i=1,nobs2
-                do j=1,maxj
-                    if(fp_equal(data2(i,1),icode(j))) then
-                        catcount(j) = catcount(j) + 1
-                        cycle
-                    end if
-                end do
-            end do
-             WRITE(3,'(" Categories of the Dependent Variable")')
-             WRITE(3,'(" ----------------------------------------------------------------")')
-             WRITE(3,'(" Category             Frequency         Proportion")')
-            DO J = 1,MAXJ
-                WRITE(3,"(1X,F8.2,8X,F12.2,8x,f12.5)") iCODE(J),real(catcount(J)),real(catcount(J))/nobs2
-            end do
-        end if
-
-        if(pfixed > 0) then
-            write(3,*)
-            write(3,*)
-             WRITE(3,'(" Independent variables")')
-             WRITE(3,'("                         mean         min         max     std dev")')
-             WRITE(3,'(" ----------------------------------------------------------------")')
-
-            do i=1,pfixed
-                meany=sum(data2(1:nobs2,1+i))/dble(nobs2)
-                miny=minval(data2(1:nobs2,1+i))
-                maxy=maxval(data2(1:nobs2,1+i))
-                tempVector(:)=(data2(1:nobs2,1+i)-meany)**2
-                TEMP=SUM(tempVector)/DBLE(nobs2-1)
-                stdy=DSQRT(TEMP)
-                WRITE(3,200) var2label(i+1),meany,miny,maxy,stdy
-            end do
-        end if
-
-         WRITE(3,*)
-         WRITE(3,*)
-         WRITE(3,'(" Random Location and Scale EB mean estimates")')
-         WRITE(3,'("                         mean         min         max     std dev")')
-         WRITE(3,'(" ----------------------------------------------------------------")')
-        do j=1,numloc+1-nors
-            meany=sum(thetas(:,j),ni>0)/dble(nc2a)
-            miny=minval(thetas(:,j),ni>0)
-            maxy=maxval(thetas(:,j),ni>0)
-            tempVector(:)=(thetas(:,j)-meany)**2
-            TEMP=SUM(tempVector,ni>0)/DBLE(nc2a-1)
-            stdy=DSQRT(TEMP)
-            write(mystr, '(A6, I1, A17)') "Locat_",j,"                 "
-            if(j .eq. numloc+1) mystr = "Scale"
-            if(j .le. numloc .or. (j .eq. numloc+1 .and. nors .ne. 1)) WRITE(3,200) mystr,meany,miny,maxy,stdy
-        end do
-        if(pto >= 0) then
-            do j=1,numloc
-                meany=sum(thetas(:,j)*thetas(:,numloc+1),ni>0)/dble(nc2a)
-                miny=minval(thetas(:,j)*thetas(:,numloc+1),ni>0)
-                maxy=maxval(thetas(:,j)*thetas(:,numloc+1),ni>0)
-                tempVector(:)=(thetas(:,j)*thetas(:,numloc+1)-meany)**2
-                TEMP=SUM(tempVector,ni>0)/DBLE(nc2a-1)
-                stdy=DSQRT(TEMP)
-                write(mystr, '(A6, I1, A17)') "Locat_",j,"*Scale                 "
-                WRITE(3,200) mystr,meany,miny,maxy,stdy
-            end do
-        end if
-         WRITE(3,*)
-         write(3,*) "There are",sum(allzeros),"subjects with unestimable random effect values"
-         WRITE(3,*)
-         WRITE(3,*)
-
-         close(3)
-            write(mystr, '(I5)') nreps
-
-
-    totalvar = nvar3-1+multi2nd
-    select case(stage2)
-        case(1)
-            progname = "mixreg"
-            totalvar = nvar3+multi2nd
-        case(2)
-            !progname = "mixor"
-            !if(multi2nd .eq. 1)
-            progname = "mixors"
-            totalvar = nvar3-1+multi2nd+maxj-1
-        case(3)
-            progname = "mixpreg"
-        case(4)
-            progname = "mixno"
-            totalvar = (maxj-1)*(nvar3-1+multi2nd)
-    end select
-
-        filetempdat = trim(fileprefix) // "_.dat"
-        OPEN(1,FILE=trim(progname)//".def")
-        WRITE(1,*) " x                                                                             "
-        WRITE(1,*) " x                                                                              "
-        WRITE(1,5) adjustl(filetempdat)
-        if(len(trim(fileprefix)) > 34) then
-            temp80 = fileprefix(1:34) // "_x.out"
-        else
-            temp80 = trim(fileprefix) // "_x.out"
-        end if
-        WRITE(1,5) adjustl(temp80)
-    5 FORMAT(A80)
-
-        if(stage2 .ne. 2) WRITE(1,'("temp_.def")')
-
-    select case(stage2)
-        case(1)
-            write(1,'("temp_.res")')
-            WRITE(1,'(5I3,E10.1E3, 9I3)') 1, 5, nvar3+2, multi2nd, nvar3-1, .0005, 0, 0, 0, 0, 0, 0, 1, 0, 0
-        case(2)
-        !if(multi2nd .ne. 1) then
-        !    WRITE(1,'(4I3,E10.1E3,17I3,i4)') 0, nvar3+2, multi2nd, nvar3-1, .0005, maxj, 0, 0,0,0,11,1,1,0,0,0,0,0,1,0,0,0,100
-        !else
-            WRITE(1,'(9I3,E10.1E3,4I4,E10.1E3,2i2)') nvar3+2, maxj, nvar3-2, 0, 0, 0, 0, 0, 1-multi2nd, .0005, 11,1,100,0,.1,1,1
-            write(1,*) 0, -1
-        !end if
-        case(3)
-            WRITE(1,'(4I3,E10.1E3, 12I3)') 1, nvar3+2, multi2nd, nvar3-1, .0005, 0, 0, 0, 0, 0, 0, 11, 0, 0, 1, 0, 0
-        case(4)
-            WRITE(1,'(4I3,E10.1E3,17I3,i4)') 0, nvar3+2, multi2nd, nvar3-1, .0005, maxj, 0, 0,0,0,0,0,11,0,0,1,0,1,0
-
-    end select
-        WRITE(1,*) 1, 2
-        if(stage2 .ne. 2) then! .or. multi2nd .ne. 1) then
-            if(multi2nd .eq. 1) write(1,*) nvar3+2
-            write(1,*) (i+2, i=1, nvar3-1)
-        else
-            write(1,*) (i+2, i=2, nvar3-1)
-        end if
-        if(stage2 .eq. 2 .or. stage2 .eq. 4)     write(1,'(20f8.3)')(iCODE(J), J = 1,MAXJ)
-        WRITE(1,*) intlabel(1)
-        if(stage2 .ne. 2) then! .or. multi2nd .ne. 1) then
-            if(multi2nd .eq. 1) write(1,*) "Intercept"
-            if(stage2 .eq. 4) then
-                write(1,'(12a8)') (intlabel(i), i=2, nvar3)
-            else
-                write(1,*) (intlabel(i), i=2, nvar3)
-            end if
-        else
-            write(1,*) (intlabel(i), i=3, nvar3)
-        end if
-        CLOSE(1)
-
-        allocate(betas(nreps,totalvar))
-        allocate(totalvarhats(totalvar))
-        totalvarhats = 0
-        allocate(liks(nreps))
-        allocate(temp3(totalvar))
-        write(*,*) trim(progname),nvar3,multi2nd,totalvar
-        betas = 0
-        liks = 0
-        ncolinvar = totalvar
-        if(stage2 .eq. 1) ncolinvar = nvar3-1
-    do n=1, nreps
-        myobs = 0
-        if(mod(n,10) .eq. 0) write(*,*) n
-        open(n*5,file=filetempdat)
-        DO I=1,NC2  ! go over level-2 clusters
-            do ii=1,ni(i)
-                myobs = myobs + 1
-                tempdata(1) = data2(myobs,1)
-                k=1
-                diffk = 0
-                if(pfixed .ge. 0) then
-                    tempdata(2) = 1d0
-                    diffk = diffk + 1
-                    if(pfixed .ge. 1) then
-                        tempdata(k+diffk+1:k+diffk+pfixed) = data2(myobs,k+1:k+pfixed)
-                        k = k + pfixed
-                    end if
-                end if
-                if(ptheta .ge. 0) then
-                    do j=1,numloc
-                        tempdata(k+diffk+1) = simvals(n,i,j)
-                        diffk = diffk + 1
-                        if(ptheta .ge. 1) then
-                            tempdata(k+diffk+1:k+diffk+ptheta) = simvals(n,i,j)*data2(myobs,k+1:k+ptheta)
-                            if(j .ne. numloc) diffk = diffk + ptheta
-                        end if
-                    end do
-                    k = k + ptheta
-                end if
-                if(pomega .ge. 0) then
-                    tempdata(k+diffk+1) = simvals(n,i,numloc+1)
-                    diffk = diffk + 1
-                    if(pomega .ge. 1) then
-                        tempdata(k+diffk+1:k+diffk+pomega) = simvals(n,i,numloc+1)*data2(myobs,k+1:k+pomega)
-                        k = k + pomega
-                    end if
-                end if
-                if(pto .ge. 0) then
-                    do j=1,numloc
-                        tempdata(k+diffk+1) = simvals(n,i,j)*simvals(n,i,numloc+1)
-                        diffk = diffk + 1
-                        if(pto .ge. 1) then
-                            tempdata(k+diffk+1:k+diffk+pto) = tempdata(k+diffk+1)*data2(myobs,k+1:k+pto)
-                            if(j .ne. numloc) diffk = diffk + ptheta
-                        end if
-                    end do
-                    k = k + pto
-                end if
-                write(n*5,'(i16,25e18.6)') idni(i,1),(tempdata(k),k=1,nvar3),1.0
-            end do
-        end do
-        close(n*5)
-#if defined(_WIN32)
-        CALL SYSTEM(progname//"> _temp")
-#else
-        CALL SYSTEM("./"//progname//"> _temp")
-#endif
-        nvalid = nvalid + 1
-        open(n*5+2, file=trim(progname)//".est")
-        do j=1,totalvar
-            read(n*5+2,*) mystr, betas(nvalid,j)
-        end do
-        close(n*5+2)
-        if(isnan(betas(nvalid,1))) then
-            nvalid = nvalid - 1
-            write(*,*) "INVALID REPLICATION"
-        else
-            open(n*5+3, file=trim(progname)//".var")
-                do j=1,ncolinvar
-                    read(n*5+3,*) (temp3(i),i=1,ncolinvar)
-                    totalvarhats(j) = totalvarhats(j) + temp3(j)
-                end do
-                if(stage2 .eq. 1) then
-                    do j=1,1+multi2nd
-                        read(n*5+3,*) (temp3(i),i=1,1+multi2nd)
-                        totalvarhats(nvar3-1+j) = totalvarhats(nvar3-1+j) + temp3(j)
-                    end do
-                end if
-            close(n*5+3)
-            open(n*5+4, file=trim(progname)//".lik")
-            read(n*5+4,*) liks(n)
-            close(n*5+4)
-        end if
-    end do
-
-            write(mystr, '(I5)') nvalid
-        fileout = trim(fileprefix) // "_"//trim(adjustl(mystr)) //".out"
-    open(2,file=fileout)
-    write(2,*)
-!write(2,*) "Level 2 obervations =",nc2
-    write(2,*) "Number of replications =", nvalid
-    write(2,*)
-    WRITE(2,'("-------------")')
-    WRITE(2,'("Final Results")')
-    WRITE(2,'("-------------")')
-    logl = sum(liks)/nvalid
-    loglsd = sqrt(sum((liks(1:nvalid)-logl)**2)/(nvalid-1))
-   WRITE(2,562)LOGL,loglsd,LOGL-totalvar+1, &
-   LOGL-0.5D0*DBLE(totalvar-1)*DLOG(DBLE(NC2)),0-2*LOGL,0-2*(LOGL-totalvar+1), &
-   0-2*(LOGL-0.5D0*DBLE(totalvar-1)*DLOG(DBLE(NC2)))
-   562 FORMAT(1X,'Average Log Likelihood         = ',F12.3,' (sd=',F6.3,')'/, &
-         1X,"Akaike's Information Criterion = ",F12.3,/, &
-         1X,"Schwarz's Bayesian Criterion   = ",F12.3,//,&
-         1X,"==> multiplied by -2             ",      /  &
-         1X,'Log Likelihood                 = ',F12.3,/, &
-         1X,"Akaike's Information Criterion = ",F12.3,/, &
-         1X,"Schwarz's Bayesian Criterion   = ",F12.3,/)
-            WRITE(2,57)
-            57 FORMAT(/,'Variable',12x,'    Estimate',4X,'AsymStdError',4x, &
-                      '     z-value',4X,'     p-value',/,'----------------',4x,  &
-                      '------------',4X,'------------',4X,'------------',4X,'------------')
-    allocate(varbetas(totalvar+1))
-    allocate(meanbetas(totalvar+1))
-    varbetas = 0
-    totalvarhats(:) = totalvarhats(:) / (nvalid-1)
-
-    do j=1,totalvar
-        meanbetas(j) = sum(betas(1:nvalid,j))/nvalid
-    end do
-     804 FORMAT(A16,4(4x,F12.5))
-        681 FORMAT(1X,'Category',F8.3,' vs Category',F8.3,/)
-    do j=1,totalvar !nvar-1 fixed effects plus the residual variance
-        if(stage2 .eq. 4 .and. mod(j,nvar3-1+multi2nd) .eq. 1)   write(2,681) icode(j/(nvar3-1)+2),icode(1)
-
-        do i=1,nvalid
-            varbetas(j) = varbetas(j) + (betas(i,j)-meanbetas(j))**2
-        end do
-        varbetas(j) = varbetas(j) / (nvalid - 1)
-        jlabel = j+1
-        jval = j
-        if(stage2 .eq. 4) then
-            jlabel = mod(j,nvarpercat)+1
-            jval = j - j/nvarpercat
-            if(jlabel .eq. 1) then
-                jlabel = nvarpercat+1
-                jval = totalvar - maxj+1+j/nvarpercat
-            end if
-        end if
-        if(intLabel(jlabel) .eq. "Random.Int.Var") write(2,*)
-        seval = sqrt(totalvarhats(jval)+varbetas(jval)*(1+1/nvalid))
-        ZVAL = meanbetas(jval)/seval
-        PVAL = 2.0D0 *(1.0D0 - PHIFN(DABS(ZVAL),0))
-        if(stage2 .ne. 2) then
-            write(2,804) intlabel(jlabel), meanbetas(jval), seval,zval,pval
-        else if(maxj .eq. 2) then
-            if(j .ne. nvar3) write(2,804) intlabel(jlabel), meanbetas(jval), seval,zval,pval
-        else
-            if(j .ne. 1) write(2,804) intlabel(jlabel), meanbetas(jval), seval,zval,pval
-        end if
-        if(stage2 .eq. 4 .and. mod(j,nvar3-1+multi2nd) .eq. 0) write(2,*)
-    end do
-
-#if defined(_WIN32)
-        CALL SYSTEM("copy "//trim(fileprefix)//"_desc2.out+"//trim(fileprefix) &
-                    //"_"//trim(adjustl(mystr))//".out "//trim(fileprefix)//"_2.out")
-#else
-        CALL SYSTEM("cat "//trim(fileprefix)//"_desc2.out "//trim(fileprefix) &
-            //"_"//trim(adjustl(mystr))//".out >> "//trim(fileprefix)//"_2.out")
-#endif
-!!    call system("del "//trim(fileprefix)//"_desc2.out")
-!    CALL SYSTEM("DEL temp_.*")
-end subroutine dostage2
-
-subroutine make_random
-    use lsboth
-    use procedures
-    implicit none
-
-    INTEGER :: I,k,j,numre,c
-    REAL(KIND=8),ALLOCATABLE:: chols(:,:,:),myrand(:,:)
-    integer,allocatable :: tempseed(:)
-
-    numre = numloc+(1-nors)
-    allocate(chols(nc2,numre,numre))
-    allocate(simvals(nreps,nc2,numre))
-    allocate(myrand(nc2,numre))
-    allocate(allzeros(nc2))
-
-    call random_seed(size=k)
-    allocate(tempseed(k))
-    tempseed(:) = myseed
-    call random_seed(put=tempseed)
-
-    allzeros = 0
-    do k=1,nc2
-        c=1
-        do i=1,numre
-            do j=1,i
-                chols(k,i,j) = thetavs(k,c)
-                c = c+1
-                chols(k,j,i) = chols(k,i,j)
-            end do
-        end do
-
-        call cholesky_sub(chols(k,:,:),numre,allzeros(k))
-!        write(*,*) ((chols(k,i,j),i=1,numre),j=1,numre)
-    end do
-!        write(*,'(20f8.3)') ((chols(1,i,j),i=1,numre),j=1,numre)
-!        write(*,'(20f8.3)') (thetavs(1,c),c=1,numre*(numre+1)/2)
-    do i=1,nreps
-        do j=1,nc2
-            do k=1,numre
-                myrand(j,k) = random_normal()
-            end do
-        end do
-        do k=1,nc2
-            simvals(i,k,:) = matmul(myrand(k,:),chols(k,:,:)) + thetas(k,:)
-!            write(*,*) k,(simvals(i,j,k),j=1,nc2)
-        end do
-    end do
-end subroutine make_random
-
-SUBROUTINE READAT2()
-    use lsboth, only: tempsums,data2,nc2sep,nvar2,idnisep,id2indsep,miss,ymiss,nvarsep,maxksep,nobssep,var2ind,&
-                      filedat2
-    use procedures
-    implicit none
-
-    INTEGER :: myPASS,I,K,ICOUNT,myindex,IDTEMP,IDOLD,hasmiss
-    REAL(KIND=8),ALLOCATABLE:: TEMPR(:)
-    LOGICAL FIRST
-
-    ALLOCATE (TEMPR(NVARsep))
-
-   ! INITIALIZE
-    DO myPASS = 1,2
-        IF (myPASS .EQ. 2) THEN
-                allocate(tempsums(nc2sep,nvar2))
-                allocate(data2(icount,nvar2))
-
-              tempsums = 0
-              data2 = 0
-        ! IDNI has IDs and Nobs per ID
-              ALLOCATE (IDNIsep(NC2sep,2))
-              IDNIsep = 0
-        ENDIF
-
-        I     = 1
-        K     = 1
-        MAXKsep  = 0
-        ICOUNT= 0
-        NOBSsep  = 0
-        FIRST  = .TRUE.
-
-        ! READ IN DATA UNTIL END
-        OPEN(1,ACTION='READ',FILE=FILEDAT2)
-
-        DO   ! loop forever
-
-              READ(1,*,END=1999)(TEMPR(myindex),myindex=1,NVARsep)
-                hasmiss = 0
-                IF (MISS .EQ. 1) THEN
-                    do myindex = 1,nvar2
-                        IF (FP_EQUAL(tempr(var2ind(myindex)), YMISS)) THEN
-                            hasMISS = 1
-                            exit
-                        END IF
-                    end do
-                end if
-                IF (hasMISS .NE. 0) THEN
-                    CYCLE  ! give up on current value and go read next one
-                end if
-
-      ! QUERY FOR NEW ID AND SET PARAMETERS ACCORDINGLY
-
-              IDTEMP = INT(TEMPR(ID2INDsep))
-              ! QUERY FOR NEW ID AND SET PARAMETERS ACCORDINGLY
-
-              IF (.NOT. FIRST) THEN
-                 IF (IDTEMP .EQ. IDOLD) THEN
-                    K     = K+1
-                 ELSE
-                    if(mypass .eq. 2) then
-                        IDNIsep(I,1) = IDOLD
-                        IDNIsep(I,2) = K
-                    ENDIF
-                        NOBSsep = NOBSsep+K
-                        IF (K .GT. MAXKsep) MAXKsep = K
-                        I     = I+1
-                    K     = 1
-                 ENDIF
-              ENDIF
-
-              ! PUT TEMPORARY VALUES INTO DATA VECTORS AND MATRICES
-
-              IDOLD = IDTEMP
-              ICOUNT = ICOUNT+1
-
-              FIRST  = .FALSE.
-              IF (myPASS == 2) THEN
-                    do myindex=1,nvar2
-                        if(var2ind(myindex) .ne. 0) then
-                            tempsums(i,myindex) = tempsums(i,myindex) + tempr(var2ind(myindex))
-                            data2(icount,myindex) = tempr(var2ind(myindex))
-                        end if
-                    end do
-              END IF
-
-        END DO   ! loop back to read next line
-
-    ! cleanup final entry
-    1999                IF (myPASS .EQ. 2) THEN
-                           IDNIsep(I,1) = IDOLD
-                           IDNIsep(I,2) = K
-                        ENDIF
-                        NOBSsep = NOBSsep+K
-                        IF (K .GT. MAXKsep) MAXKsep = K
-    NC2sep = I
-    CLOSE(1)
-   END DO   ! two passes, one to get size, second to read data
-        do i=1,nc2sep
-            tempsums(i,1:nvar2) = tempsums(i,1:nvar2)/idnisep(i,2)
-        end do
-   DEALLOCATE(TEMPR)
-END SUBROUTINE READAT2
 
 subroutine run_stage2()
     use lsboth
     implicit none
     integer::i,j,k
-
+    
         open(1,file="stage2only.def")
     WRITE(1,'(18A4)') HEAD
         if(sepfile .ne. 1) then
@@ -3165,10 +2539,6 @@ subroutine run_stage2()
         IF (Pto .GE. 1) THEN
             write(1,*) (var2label(k+I), I=1,Pto)
         END IF
-#if defined(_WIN32)
-        call system("stage2only")
-#else
-        call system("./stage2only")
-#endif
-    CLOSE(1)
+        call system("stage2only64")
+    CLOSE(1)   
 end subroutine run_stage2
