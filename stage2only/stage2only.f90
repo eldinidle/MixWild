@@ -681,7 +681,6 @@ close(2)
     call system("mv "//trim(fileprefix)//"*_x.out temp_.* work")
     call system("mv "//trim(progname)//".var "//trim(progname)//".est "//trim(progname)//".lik "//trim(progname)//".def work")
 #endif
-
 end subroutine dostage2
 
 subroutine make_random

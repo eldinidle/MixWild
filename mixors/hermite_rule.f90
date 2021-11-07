@@ -120,7 +120,6 @@
       integer, allocatable, dimension(:) :: mlt,ndx
 !
 !     Compute the Gauss quadrature formula for default values of A and B.
-!
       call cdgqf ( nt, alpha, beta, t, wts )
 !
 !     Prepare to scale the quadrature formula to other weight function with 
@@ -140,7 +139,6 @@
 
       deallocate ( mlt )
       deallocate ( ndx )
-
       return
 
    end subroutine cgqf
@@ -677,7 +675,6 @@
 !weightsF contains the final weights. It is an integer array of length total_quad.
 !pointsF contains the final points, in a 2D integer array total_quad by dimRE.
 subroutine getQuad(dimRE, n_quad, total_quad, pointsF, weightsF)
-
   implicit none
   !Input Arguments
   integer, intent(in) :: dimRE, total_quad, n_quad
@@ -691,6 +688,7 @@ subroutine getQuad(dimRE, n_quad, total_quad, pointsF, weightsF)
       REAL(kind=8), PARAMETER :: Pi = 3.141592653589793238462643
       REAL(kind=8), PARAMETER :: zero = 0
       REAL(kind=8), PARAMETER :: one = 1
+
   weightsF(:) = 1
   
   if(dimRE < 1) return
@@ -699,7 +697,6 @@ subroutine getQuad(dimRE, n_quad, total_quad, pointsF, weightsF)
   allocate( points(n_quad, dimRE) )
 
   call cgqf(n_quad, zero, zero, zero, one, points(:,1), weights(:,1))
-
   points(:,1) = points(:,1)*sqrt(2.0)
   weights(:,1) = weights(:,1)/SQRT(PI)
   

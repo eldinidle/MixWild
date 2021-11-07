@@ -24,7 +24,7 @@ mv lsboth_random_mixblank/lsboth_random_mixblank 'Mac Binaries'
 
 echo 'mixreg'
 cd mixreg
-gfortran -c -o mixlib_mixreg.o -g -std=legacy -static -D _UNIX -cpp mixlib_mixreg.f90
+gfortran -c -o mixlib.o -g -std=legacy -static -D _UNIX -cpp mixlib.f90
 gfortran -c -o matcal1.o -g -std=legacy -static -D _UNIX -cpp matcal1.f90
 gfortran -c -o matcal2.o -g -std=legacy -static -D _UNIX -cpp matcal2.F90
 gfortran -c -o rrmset.o -g -std=legacy -static -D _UNIX -cpp rrmset.f90
@@ -32,7 +32,7 @@ gfortran -c -o mixregc.o -g -std=legacy -static -D _UNIX -cpp mixregc.f90
 gfortran -c -o dllstub.o -g -std=legacy -static -D _UNIX -cpp dllstub.f90
 mkdir modules
 mv *.mod modules
-ar -qs libmix.a matcal1.o matcal2.o mixlib_mixreg.o rrmset.o mixregc.o dllstub.o
+ar -qs libmix.a matcal1.o matcal2.o mixlib.o rrmset.o mixregc.o dllstub.o
 gfortran libmix.a -Jmodules -L/usr/local/gfortran/lib -static-libgcc -static-libgfortran -D _UNIX -cpp -o mixreg
 rm *.o
 rm -rf modules

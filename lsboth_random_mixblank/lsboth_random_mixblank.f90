@@ -7,6 +7,7 @@ program mixregls_both
     call adjustdata()
     call printdesc()
     call callmixreg()
+
 #if defined(_WIN32)
     if(mls .eq. 1) then
         call mixregmlsest()
@@ -36,8 +37,8 @@ program mixregls_both
     CALL SYSTEM("rm mixregls_both1.OUT")
     CALL SYSTEM("rm mixregls_both2.OUT")
     CALL SYSTEM("rm mixreg.est")
-    CALL SYSTEM("mixreg.var")
-    CALL SYSTEM("mixreg.def")
+    CALL SYSTEM("rm mixreg.var")
+    CALL SYSTEM("rm mixreg.def")
     CALL SYSTEM("rm mixreg.lik")
     CALL SYSTEM("rm _temp")
 
@@ -261,7 +262,7 @@ subroutine writedef_both
     WRITE(1,'(18A4)') HEAD
     WRITE(1,'(A80)') FILEDAT
     WRITE(1,'(A80)') FILEprefix
-    WRITE(1,'(10I3,E10.1E3, i4, i2, i5, f12.3, 2i2, f6.3,3i2,i5,f6.3,i2,i12,3i2)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
+    WRITE(1,'(10I3,E12.1E3, i4, i2, i5, f12.3, 2i2, f6.3,3i2,i5,f6.3,i2,i12,3i2)') NVAR, Pold, Rold, Sold, PNINT, RNINT, SNINT, &
         pv,rv,sv, CONV, NQ, AQUAD, MAXIT,yMISS,NCENT,ncov,ridgein,discard0,MLS,chol,nreps,cutoff,nors,myseed,stage2,multi2nd,sepfile
     WRITE(1,'(20I3)') ID2IND, YIND
     IF (P .GE. 1) THEN
@@ -757,7 +758,7 @@ SUBROUTINE mixregmlsEST()
                                    ABDER2(:),TBDER2(:),TADER2(:),SBDER2(:),SADER2(:),STDER2(:), &
                                    TBADER2(:),SBADER2(:),SBATDER2(:),DZ2(:),SE(:), &
                                    THETA(:),thetav(:),WORK2(:),WORK3(:), myder2sq(:,:),&
-                                   mytheta(:), myweights(:),mypoints(:,:), myweights0(:),&
+                                   mytheta(:), myweights(:),mypoints(:,:), myweights0(:),chol2(:,:),u2var(:,:),u2mean(:,:),&
                                    mypoints0(:,:),pointsR0(:,:),weightsR0(:),pointsR1(:,:),weightsR1(:),&
                                    cholTheta(:),uth(:),uthfull(:),mycholspar(:),mycholspar2(:),&
                                    sstar(:,:), work(:,:), sigma(:),asstar2(:,:),adjVar(:,:)
@@ -840,6 +841,9 @@ SUBROUTINE mixregmlsEST()
         ALLOCATE (SBADER2(NS*(P+RR)))
         ALLOCATE (SBATDER2(NS*(P+RR+S)))
         ALLOCATE (SDER2(NS2))
+    allocate(u2mean(ndim,1))
+    allocate(u2var(ndim,ndim))
+    allocate(chol2(ndim,ndim))
 
         cholamt = rr+ns
         cholcol = r+1
@@ -1255,7 +1259,7 @@ SUBROUTINE mixregmlsEST()
                 write(IUNS,*)"2nd Derivatives"
                 ll = 0
                 do k=1,npar
-                    write(IUNS,'(25f10.2)') (der2b(ll+kk), kk=1,k)
+                    write(IUNS,'(25g15.4)') (der2b(ll+kk), kk=1,k)
                     ll = ll + k
                 end do
 
@@ -1439,6 +1443,10 @@ end do
                 work(1:npar,1:npar) = matmul(asstar2(1:npar,1:npar), myder2sq(1:npar,1:npar))
                 adjVar(1:npar,1:npar) = matmul(work(1:npar,1:npar),&
                                                 transpose(asstar2(1:npar,1:npar)))
+write(iuns,*) "Transformed var/covar values"
+do i=1,npar
+    write(iuns,'(20F12.4)') (adjvar(i,j), j=1,npar)
+end do
             else
                 sigma(1:rr) = mycholspar(1:rr)
                 adjvar = myder2sq
@@ -1447,6 +1455,8 @@ end do
             DO k=1,npar
                 se(k) = dsqrt(dabs(adjvar(k,k)))
             END DO
+write(iuns,*) "Standard errors"
+write(iuns,'(20F12.4)') (se(j), j=1,npar)
 
                  ! WRITE RESULTS
             WRITE(IUN,562)ITER-1,ORIDGE,LOGL,LOGL-NPAR, &
@@ -1587,6 +1597,40 @@ write(iuns,*) (myorder2(k),k=1,ndim2)
         write(37,'(20F15.8)') (adjvar(i,j), j=1,npar)
     end do
     close(37)
+        open(123,file=trim(fileprefix)//"_ebvar2.dat")
+        chol2 = 0
+            counter = 0
+            do k=1,numloc
+                do j=1,k
+                    counter = counter + 1
+                    chol2(k,j) = mychol(counter)
+                end do
+            end do
+            counter = 0
+            do k=numloc+1,ndim
+                do j=1,k
+                    counter = counter + 1
+                    chol2(k,j) = spar(counter)
+                end do
+            end do
+!        write(113,'(25g23.4)') ((chol2(i,j),j=1,ndim),i=1,ndim)
+        do k=1,nc2
+            counter = 0
+            u2mean(:,1) = thetas(k,:)
+            do i=1,ndim
+                do j=1,i
+                    counter = counter + 1
+                    u2var(i,j) = thetavs(k,counter)
+                    u2var(j,i) = u2var(i,j)
+                end do
+            end do
+!            write(113,'(25g23.4)') (u2mean(i,1), i=1,ndim), ((u2var(i,j),j=1,ndim),i=1,ndim)
+            u2mean(1:ndim,1:1) = matmul(chol2(1:ndim,1:ndim),u2mean(1:ndim,1:1))
+            work(1:ndim,1:ndim) = matmul(chol2,u2var)
+            u2var(1:ndim,1:ndim) = matmul(work(1:ndim,1:ndim),transpose(chol2(1:ndim,1:ndim)))
+!            write(113,'(25g23.4)') (u2mean(i,1), i=1,ndim), ((u2var(i,j),j=1,ndim),i=1,ndim)
+            write(123,'(i8,25g23.4)') idni(k,1),(u2mean(i,1), i=1,ndim), ((u2var(i,j),j=1,i),i=1,ndim)
+        end do
         deallocate(weightsR1,pointsR1,weightsR0,pointsR0,myweights,mypoints)
         deallocate(bder2,abder2,ader2,der2a,der2b,der,derp,derp2,derq,derq2,derqq,dz,derps,tader2, &
                     tbder2,tbader2,tder2,dz2,sbder2,sader2,stder2,sbader2,sbatder2,sder2)
@@ -1600,7 +1644,7 @@ SUBROUTINE mixREGLSEST()
     implicit none
     INTEGER :: I,J,L,LL,l2,k,PP,SS, & !RR
                IUN,CYCLES,NCYCLE,RP2,RPS2,NQ1,S0,NS2,IFIN,ITER,NN, &
-               Q,NOB,IER,RIDGEIT,IUNS,myqdim,totalqR0,totalqR1,mytotalq,ncov0
+               Q,NOB,IER,RIDGEIT,IUNS,myqdim,totalqR0,totalqR1,mytotalq,ncov0,counter
     REAL(KIND=8) :: RIDGE,LOGLP,PSUM,DET,LOGL,PI,XB,WT,WSVAR,ERRIJ,LPROB,PRA,LOGDIFF,MAXCORR,ONE,SCAL,&
                     ORIDGE,PVAL,ZVAL,RTEMP,RTEMP2,SMALL,BIG,LOGBIG,MAXDER,sdev,phiRatio,&
                     ua,bsvar,myz,tauhat,tauhatlow,tauhatup,temp
@@ -1610,11 +1654,30 @@ SUBROUTINE mixREGLSEST()
                                ABDER2(:),TBDER2(:),TADER2(:),SBDER2(:),SADER2(:),STDER2(:), &
                                TBADER2(:),SBADER2(:),SBATDER2(:),DZ2(:),SE(:), &
                                THETA(:),thetav(:),WORK2(:),WORK3(:), &
-                               myweights(:),mypoints(:,:), myweights0(:),&
+                               myweights(:),mypoints(:,:), myweights0(:),chol2(:,:),u2var(:,:),u2mean(:,:),&
                                mypoints0(:,:),pointsR0(:,:),weightsR0(:),pointsR1(:,:),weightsR1(:),&
-                               vaug(:),varSQ(:,:)
+                               vaug(:),varSQ(:,:),work(:,:)
+    character(len=80)::templabel
 
-        ! parameters
+    open(37,file=trim(fileprefix)//"_ebnames.txt")
+    do i=1,numloc
+        write(templabel,'(a5,i1)') "Locat",i
+        write(37,*) templabel
+    end do
+    do i=1,1-nors
+        write(templabel,'(a5,i1)') "Scale",i
+        write(37,*) templabel
+    end do
+    do i=1,numloc+1-nors
+        write(templabel,'(a4,i1)') "pvar",i
+        do j=i+1,numloc+1-nors
+            write(templabel,'(a6,i1,i1)') "pcovar",i,j
+            write(37,*) templabel
+        end do
+    end do
+    close(37)
+
+! parameters
     PI = 3.141592653589793238462643d0
     ONE = 1.0D0
     RTEMP = 1.0D0
@@ -1695,6 +1758,10 @@ SUBROUTINE mixREGLSEST()
         allocate(myweights(nqwR1))
         allocate(mypoints(nqwR1,2))
         allocate(varSQ(npar,npar))
+    allocate(u2mean(ndim,1))
+    allocate(u2var(ndim,ndim))
+    allocate(chol2(ndim,ndim))
+    allocate(work(ndim,ndim))
 
         ! start cycles
         ! cycles = 1: random intercept model with BS variance terms
@@ -2326,6 +2393,31 @@ SUBROUTINE mixREGLSEST()
         write(23,'(i16,20F15.8)') idni(i,1), (THETAs(I,j), j=1,myqdim), (thetavs(i,j), j=1,k)
     end do
     close(23)
+    if(R==1 .and. ncov==1) then
+        open(123,file=trim(fileprefix)//"_ebvar2.dat")
+        chol2 = 0
+        chol2(1,1) = exp(.5*alpha(1))
+        if(myqdim > 1) then
+            chol2(1:2,2) = spar(1:2)
+        end if
+!        write(113,'(25g23.4)') ((chol2(i,j),j=1,ndim),i=1,ndim)
+        counter = 0
+        do k=1,nc2
+            u2mean(:,1) = thetas(k,:)
+            u2var(1,1) = thetavs(k,1)
+            if(myqdim > 1) then
+                u2var(1,2) = thetavs(k,2)
+                u2var(2,1) = thetavs(k,2)
+                u2var(2,2) = thetavs(k,3)
+            end if
+!            write(113,'(25g23.4)') (u2mean(i,1), i=1,ndim), ((u2var(i,j),j=1,ndim),i=1,ndim)
+            u2mean = matmul(chol2,u2mean)
+            work(1:myqdim,1:myqdim) = matmul(chol2,u2var)
+            u2var = matmul(work(1:myqdim,1:myqdim),transpose(chol2))
+!            write(113,'(25g23.4)') (u2mean(i,1), i=1,ndim), ((u2var(i,j),j=1,ndim),i=1,ndim)
+            write(123,'(i8,25g23.4)') idni(k,1),(u2mean(i,1), i=1,ndim), ((u2var(i,j),j=1,i),i=1,ndim)
+        end do
+    end if
     ll=1
     do i=1,npar
         do j=1,i
@@ -2384,7 +2476,6 @@ subroutine callmixreg
         spar(1) = .4!abs(log(sdlv))
     ALLOCATE (THETAs(NC2,ndim))
     ALLOCATE (thetavs(NC2,ndim2))
-
 #if defined(_WIN32)
        CALL SYSTEM("MIXREG.EXE > mixregls_both_temp_")
 #else
